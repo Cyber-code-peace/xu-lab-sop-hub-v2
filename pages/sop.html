@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Xu Lab 课题组实验 SOP、药品供应商、科研工具与常用耗材导航。" />
+    <meta name="theme-color" content="#2f7d66" />
+    <title>实验 SOP 目录 | Xu Lab SOP Hub</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body class="sop-page-main" data-base="..">
+    <header class="topbar">
+      <a class="brand" href="../index.html" aria-label="返回首页">
+        <span class="brand-mark">XL</span>
+        <div>
+          <strong>Xu Lab</strong>
+          <span>实验 SOP 与科研导航</span>
+        </div>
+      </a>
+      <div class="designer">Designed by ZLZ</div>
+      <nav class="nav">
+        <a href="../pages/sop.html">实验 SOP</a>
+        <a href="../pages/suppliers.html">药品供应商</a>
+        <a href="../pages/tools.html">科研工具</a>
+        <a href="../pages/reagents.html">试剂耗材</a>
+      </nav>
+    </header>
+    <main class="page-main page-enter">
+      <section class="page-hero">
+        <p class="eyebrow">Experiments</p>
+        <h1>实验 SOP 目录</h1>
+        <p>按实验类型和标签筛选 SOP，进入页面可预览和下载原始 PDF。</p>
+      </section>
+      <section class="directory-tools">
+        <label class="search wide-search">
+          <span>搜索</span>
+          <input id="sopSearchInput" type="search" placeholder="输入实验名、作者、标签或关键词" />
+        </label>
+        <div class="category-tabs" id="categoryTabs" aria-label="SOP 分类"></div>
+        <div class="tag-tabs" id="tagTabs" aria-label="SOP 标签"></div>
+        <div class="page-actions">
+          <a class="button primary" href="../downloads/all-sop-pdfs.zip" download>下载全部 SOP</a>
+        </div>
+      </section>
+      <section class="directory-grid sop-grid" id="sopDirectory"></section>
+    </main>
+    <script src="../app.js"></script>
+
+  </body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Xu Lab 课题组实验 SOP、药品供应商、科研工具与常用耗材导航。" />
+    <meta name="theme-color" content="#2f7d66" />
+    <title>Xu Lab SOP Hub | Xu Lab SOP Hub</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="" data-base=".">
+    <header class="topbar">
+      <a class="brand" href="./index.html" aria-label="返回首页">
+        <span class="brand-mark">XL</span>
+        <div>
+          <strong>Xu Lab</strong>
+          <span>实验 SOP 与科研导航</span>
+        </div>
+      </a>
+      <div class="designer">Designed by ZLZ</div>
+      <nav class="nav">
+        <a href="./pages/sop.html">实验 SOP</a>
+        <a href="./pages/suppliers.html">药品供应商</a>
+        <a href="./pages/tools.html">科研工具</a>
+        <a href="./pages/reagents.html">试剂耗材</a>
+      </nav>
+    </header>
+
+    <main class="page-enter">
+      <section class="landing compact-landing" id="top">
+        <div class="landing-copy">
+          <button class="quote-chip" id="quoteButton" type="button" aria-label="点击刷新名言">
+            <strong id="quoteText">自信驾驭强大</strong>
+          </button>
+          <p class="eyebrow">Standard Operating Procedures</p>
+          <h1>课题组实验资料库</h1>
+          <p>
+            将组内规范化 SOP 按实验类型整理，支持快速筛选、关键词检索、PDF 预览和下载；
+            常用药品平台整理为可点击入口，减少来回翻找。
+          </p>
+        </div>
+        <div class="bubble-field" aria-label="网站核心功能">
+          <a class="bubble bubble-main bubble-sop" href="./pages/sop.html">实验<br />SOP</a>
+          <a class="bubble bubble-main bubble-buy" href="./pages/suppliers.html">药品<br />供应商</a>
+          <a class="bubble bubble-main bubble-tools" href="./pages/tools.html">科研<br />工具</a>
+          <a class="bubble bubble-small bubble-reagents" href="./pages/reagents.html">试剂<br />耗材</a>
+        </div>
+      </section>
+
+      <section class="section tight-section" id="sop">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Experiments</p>
+            <h2>实验 SOP</h2>
+          </div>
+          <div class="section-actions">
+            <a class="button primary" href="./downloads/all-sop-pdfs.zip" download>下载全部 SOP</a>
+            <a class="button ghost" href="./pages/sop.html">进入 SOP 目录</a>
+          </div>
+        </div>
+        <div class="preview-row" id="homeSops"></div>
+      </section>
+
+      <section class="section section-muted tight-section" id="buy">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Purchasing</p>
+            <h2>药品供应商</h2>
+          </div>
+          <a class="button ghost" href="./pages/suppliers.html">查看供应商</a>
+        </div>
+        <div class="preview-row" id="homeVendors"></div>
+      </section>
+
+      <section class="section tight-section" id="tools">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Research Tools</p>
+            <h2>科研工具与数据库</h2>
+          </div>
+          <a class="button ghost" href="./pages/tools.html">查看全部工具</a>
+        </div>
+        <div class="preview-row" id="homeTools"></div>
+      </section>
+
+      <section class="section section-muted tight-section" id="reagents">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Inventory</p>
+            <h2>常用试剂与耗材</h2>
+          </div>
+          <a class="button ghost" href="./pages/reagents.html">查看清单</a>
+        </div>
+        <div class="preview-row" id="homeReagents"></div>
+      </section>
+    </main>
+    <script src="./app.js"></script>
+
+  </body>
+</html>
