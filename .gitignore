@@ -1,0 +1,15 @@
+.DS_Store
+Thumbs.db
+desktop.ini
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.idea/
+.vscode/
+*.tmp
+*.temp
+*~
+local-backup-*/
+site-audit-output/
+validation-output/
