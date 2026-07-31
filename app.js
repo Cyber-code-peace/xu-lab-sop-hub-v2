@@ -414,6 +414,45 @@ const siteData = {
       "updateDate": "2025-08-30",
       "updateLabel": "2025-08-30",
       "favorite": false
+    },
+    {
+      "file": "biorender绘图入门-wpy.pdf",
+      "title": "BioRender 绘图入门",
+      "author": "WPY",
+      "category": "数据与网络药理",
+      "desc": "BioRender 科研绘图基础入门与操作示例。",
+      "page": "./sop-pages/sop-27.html",
+      "pdf": "./experiment/biorender绘图入门-wpy.pdf",
+      "tags": ["作图", "BioRender"],
+      "updateDate": "",
+      "updateLabel": "待补充",
+      "favorite": false
+    },
+    {
+      "file": "Figure Database.pdf",
+      "title": "Figure Database",
+      "author": "待补充",
+      "category": "数据与网络药理",
+      "desc": "科研作图与图形资源数据库整理。",
+      "page": "./sop-pages/sop-28.html",
+      "pdf": "./experiment/Figure Database.pdf",
+      "tags": ["作图", "数据库"],
+      "updateDate": "",
+      "updateLabel": "待补充",
+      "favorite": false
+    },
+    {
+      "file": "ZYC整理作图-传workshop.pdf",
+      "title": "作图 Workshop",
+      "author": "ZYC",
+      "category": "数据与网络药理",
+      "desc": "科研作图工作坊资料整理。",
+      "page": "./sop-pages/sop-29.html",
+      "pdf": "./experiment/ZYC整理作图-传workshop.pdf",
+      "tags": ["作图", "Workshop"],
+      "updateDate": "",
+      "updateLabel": "待补充",
+      "favorite": false
     }
   ],
   "vendors": [
