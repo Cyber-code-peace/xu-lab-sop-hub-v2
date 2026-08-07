@@ -424,8 +424,7 @@ const siteData = {
       "page": "./sop-pages/sop-27.html",
       "pdf": "./experiment/biorender绘图入门-wpy.pdf",
       "tags": [
-        "作图",
-        "BioRender"
+        "数据库"
       ],
       "updateDate": "",
       "updateLabel": "待补充",
@@ -441,7 +440,6 @@ const siteData = {
       "page": "./sop-pages/sop-28.html",
       "pdf": "./experiment/Figure Database.pdf",
       "tags": [
-        "作图",
         "数据库"
       ],
       "updateDate": "",
@@ -458,8 +456,7 @@ const siteData = {
       "page": "./sop-pages/sop-29.html",
       "pdf": "./experiment/ZYC整理作图-传workshop.pdf",
       "tags": [
-        "作图",
-        "Workshop"
+        "数据库"
       ],
       "updateDate": "",
       "updateLabel": "待补充",
@@ -489,8 +486,7 @@ const siteData = {
       "category": "数据与网络药理",
       "desc": "GraphPad Prism 5.0 统计分析与科研绘图操作教程。",
       "tags": [
-        "作图",
-        "统计"
+        "数据库"
       ],
       "updateDate": "",
       "updateLabel": "待补充",
@@ -506,8 +502,7 @@ const siteData = {
       "category": "数据与网络药理",
       "desc": "使用 EndNote 在 Word 中管理并插入参考文献的完整方法。",
       "tags": [
-        "文献",
-        "Endnote"
+        "数据库"
       ],
       "updateDate": "",
       "updateLabel": "待补充",
@@ -523,8 +518,7 @@ const siteData = {
       "category": "动物实验",
       "desc": "动物实验中药物体内给药浓度的换算方式与参考表。",
       "tags": [
-        "动物",
-        "药理"
+        "动物"
       ],
       "updateDate": "2026-08-07",
       "updateLabel": "2026-08-07",
@@ -801,9 +795,10 @@ function filteredSops() {
   });
 }
 
-function sopCard(sop) {
+function sopCard(sop, index) {
+  const i = index || 0;
   return `
-    <article class="sop-card">
+    <article class="sop-card" data-category="${escapeHtml(sop.category)}" style="--i:${i}">
       <div>
         <div class="meta">
           <span class="pill">${escapeHtml(sop.category)}</span>
@@ -821,9 +816,10 @@ function sopCard(sop) {
   `;
 }
 
-function vendorCard(vendor) {
+function vendorCard(vendor, index) {
+  const i = index || 0;
   return `
-    <a class="vendor-card" href="${vendor.value}" target="_blank" rel="noopener">
+    <a class="vendor-card" href="${vendor.value}" target="_blank" rel="noopener" style="--i:${i}">
       <div>
         <div class="meta"><span class="pill">采购网站</span></div>
         <h3>${escapeHtml(vendor.name)}</h3>
@@ -834,9 +830,10 @@ function vendorCard(vendor) {
   `;
 }
 
-function toolCard(tool) {
+function toolCard(tool, index) {
+  const i = index || 0;
   return `
-    <a class="tool-card" href="${tool.url}" target="_blank" rel="noopener">
+    <a class="tool-card" href="${tool.url}" target="_blank" rel="noopener" style="--i:${i}">
       <span class="tool-mark">${escapeHtml(tool.name.slice(0, 2))}</span>
       <div>
         <span class="tool-kind">${escapeHtml(tool.category)}</span>
@@ -848,9 +845,10 @@ function toolCard(tool) {
   `;
 }
 
-function quickCard(item) {
+function quickCard(item, index) {
+  const i = index || 0;
   return `
-    <a class="quick-card" ${cardLinkAttrs(item.url)}>
+    <a class="quick-card" ${cardLinkAttrs(item.url)} style="--i:${i}">
       <span class="pill">${escapeHtml(item.type)}</span>
       <h3>${escapeHtml(item.title)}</h3>
       <p>${escapeHtml(item.desc)}</p>
@@ -858,10 +856,11 @@ function quickCard(item) {
   `;
 }
 
-function updateCard(sop) {
+function updateCard(sop, index) {
+  const i = index || 0;
   const dateLabel = sop.uploadDate ? formatDateLabel(sop.uploadDate) : sop.updateLabel;
   return `
-    <a class="update-card transition-link" href="${withBase(sop.page)}">
+    <a class="update-card transition-link" href="${withBase(sop.page)}" style="--i:${i}">
       <time>${escapeHtml(dateLabel)}</time>
       <h3>${escapeHtml(sop.title)}</h3>
       <p>${escapeHtml(sop.category)} · ${escapeHtml(sop.tags.join(" / "))}</p>
@@ -881,11 +880,11 @@ function recentSops() {
 
 function renderHome() {
   const sops = document.querySelector("#homeSops");
-  if (sops) sops.innerHTML = siteData.sops.filter((sop) => sop.favorite).slice(0, 4).map(sopCard).join("");
+  if (sops) sops.innerHTML = siteData.sops.filter((sop) => sop.favorite).slice(0, 4).map((sop, i) => sopCard(sop, i)).join("");
   const vendors = document.querySelector("#homeVendors");
-  if (vendors) vendors.innerHTML = siteData.vendors.slice(0, 4).map(vendorCard).join("");
+  if (vendors) vendors.innerHTML = siteData.vendors.slice(0, 4).map((vendor, i) => vendorCard(vendor, i)).join("");
   const tools = document.querySelector("#homeTools");
-  if (tools) tools.innerHTML = siteData.tools.slice(0, 4).map(toolCard).join("");
+  if (tools) tools.innerHTML = siteData.tools.slice(0, 4).map((tool, i) => toolCard(tool, i)).join("");
 }
 
 function recentUploadBatches() {
@@ -928,23 +927,23 @@ function renderSopDirectory() {
   const grid = document.querySelector("#sopDirectory");
   if (!grid) return;
   const sops = filteredSops();
-  grid.innerHTML = sops.length ? sops.map(sopCard).join("") : `<div class="empty">没有找到匹配的 SOP。</div>`;
+  grid.innerHTML = sops.length ? sops.map((sop, i) => sopCard(sop, i)).join("") : `<div class="empty">没有找到匹配的 SOP。</div>`;
 }
 
 function renderVendorDirectory() {
   const grid = document.querySelector("#vendorDirectory");
-  if (grid) grid.innerHTML = siteData.vendors.map(vendorCard).join("");
+  if (grid) grid.innerHTML = siteData.vendors.map((vendor, i) => vendorCard(vendor, i)).join("");
 }
 
 function renderToolDirectory() {
   const grid = document.querySelector("#toolDirectory");
-  if (grid) grid.innerHTML = siteData.tools.map(toolCard).join("");
+  if (grid) grid.innerHTML = siteData.tools.map((tool, i) => toolCard(tool, i)).join("");
 }
 
 function renderUpdateDirectory() {
   const list = document.querySelector("#updateDirectory");
   if (!list) return;
-  list.innerHTML = recentSops().map(updateCard).join("");
+  list.innerHTML = recentSops().map((sop, i) => updateCard(sop, i)).join("");
 }
 
 function initQuotes() {
@@ -977,6 +976,28 @@ function initTransitions() {
   });
 }
 
+function initNavScroll() {
+  const topbar = document.querySelector(".topbar");
+  if (!topbar) return;
+  const onScroll = () => {
+    topbar.classList.toggle("scrolled", window.scrollY > 8);
+  };
+  onScroll();
+  window.addEventListener("scroll", onScroll, { passive: true });
+}
+
+function initNavActive() {
+  const navLinks = document.querySelectorAll(".nav a");
+  if (!navLinks.length) return;
+  let current = window.location.pathname.split("/").pop() || "index.html";
+  if (current === "") current = "index.html";
+  navLinks.forEach((link) => {
+    const href = link.getAttribute("href") || "";
+    const target = href.split("/").pop();
+    link.classList.toggle("active", target === current);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderTabs();
   renderTagTabs();
@@ -988,6 +1009,8 @@ document.addEventListener("DOMContentLoaded", () => {
   renderUpdateDirectory();
   initQuotes();
   initTransitions();
+  initNavScroll();
+  initNavActive();
 
   const categoryTabs = document.querySelector("#categoryTabs");
   if (categoryTabs) categoryTabs.addEventListener("click", (event) => {
