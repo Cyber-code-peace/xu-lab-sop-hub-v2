@@ -1,3 +1,9 @@
+// Apply saved theme before anything renders
+(function applyThemeEarly() {
+  const saved = localStorage.getItem("xu-lab-theme") || "mint";
+  document.documentElement.setAttribute("data-theme", saved);
+})();
+
 const siteData = {
   "categories": [
     "全部",
@@ -998,6 +1004,40 @@ function initNavActive() {
   });
 }
 
+function initThemeSwitcher() {
+  const topbar = document.querySelector(".topbar");
+  if (!topbar) return;
+  const saved = localStorage.getItem("xu-lab-theme") || "mint";
+  const themes = [
+    { id: "mint", label: "薄荷" },
+    { id: "aurora", label: "极光" },
+    { id: "dawn", label: "晨曦" },
+    { id: "midnight", label: "暗夜" }
+  ];
+  const switcher = document.createElement("div");
+  switcher.className = "theme-switcher";
+  switcher.setAttribute("aria-label", "主题切换");
+  themes.forEach((t) => {
+    const dot = document.createElement("button");
+    dot.className = "theme-dot" + (t.id === saved ? " active" : "");
+    dot.setAttribute("data-theme", t.id);
+    dot.setAttribute("type", "button");
+    dot.setAttribute("title", t.label + "主题");
+    dot.setAttribute("aria-label", t.label + "主题");
+    dot.addEventListener("click", () => {
+      document.documentElement.setAttribute("data-theme", t.id);
+      localStorage.setItem("xu-lab-theme", t.id);
+      switcher.querySelectorAll(".theme-dot").forEach((d) =>
+        d.classList.toggle("active", d.dataset.theme === t.id)
+      );
+    });
+    switcher.appendChild(dot);
+  });
+  const nav = topbar.querySelector(".nav");
+  if (nav) nav.insertBefore(switcher, nav.firstChild);
+  else topbar.appendChild(switcher);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderTabs();
   renderTagTabs();
@@ -1011,6 +1051,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initTransitions();
   initNavScroll();
   initNavActive();
+  initThemeSwitcher();
 
   const categoryTabs = document.querySelector("#categoryTabs");
   if (categoryTabs) categoryTabs.addEventListener("click", (event) => {
