@@ -132,7 +132,6 @@ main { padding: 0 clamp(18px, 5vw, 68px) 48px; }
 .bubble-sop { --x: 4%; --y: 18%; --delay: 0s; }
 .bubble-buy { --x: 38%; --y: 4%; --delay: -1.2s; }
 .bubble-tools { --x: 62%; --y: 34%; --delay: -2.2s; }
-.bubble-reagents { --x: 29%; --y: 58%; --delay: -3s; }
 
 .section { padding: 40px 0; border-top: 1px solid var(--line); }
 .tight-section { padding: 34px 0; }
@@ -182,7 +181,7 @@ h3 { margin-bottom: 8px; font-size: 19px; }
   scroll-snap-type: x proximity;
 }
 .preview-row > * { scroll-snap-align: start; }
-.sop-card, .vendor-card, .tool-card, .mini-card, .quick-card, .update-card {
+.sop-card, .vendor-card, .tool-card, .quick-card, .update-card {
   display: flex;
   min-height: 178px;
   flex-direction: column;
@@ -194,7 +193,7 @@ h3 { margin-bottom: 8px; font-size: 19px; }
   box-shadow: 0 8px 24px rgba(26, 39, 34, 0.04);
   transition: transform 160ms ease, border-color 160ms ease;
 }
-.sop-card:hover, .vendor-card:hover, .tool-card:hover, .mini-card:hover, .quick-card:hover, .update-card:hover {
+.sop-card:hover, .vendor-card:hover, .tool-card:hover, .quick-card:hover, .update-card:hover {
   border-color: rgba(47, 125, 102, 0.45);
   transform: translateY(-2px);
 }
@@ -208,7 +207,7 @@ h3 { margin-bottom: 8px; font-size: 19px; }
   font-weight: 700;
   padding: 5px 8px;
 }
-.sop-card p, .vendor-card p, .tool-card p, .mini-card p, .quick-card p, .update-card p {
+.sop-card p, .vendor-card p, .tool-card p, .quick-card p, .update-card p {
   color: var(--muted);
   font-size: 15px;
   line-height: 1.7;
@@ -293,23 +292,6 @@ h3 { margin-bottom: 8px; font-size: 19px; }
 }
 .tab[aria-selected="true"], .tag-tab[aria-selected="true"] { border-color: var(--accent); background: var(--accent); color: #fff; }
 
-.table-wrap {
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-}
-.inventory-table { width: 100%; border-collapse: collapse; min-width: 920px; }
-.inventory-table th, .inventory-table td {
-  border-bottom: 1px solid var(--line);
-  padding: 14px 16px;
-  text-align: left;
-  vertical-align: top;
-  line-height: 1.65;
-}
-.inventory-table th { color: var(--accent-strong); background: var(--surface-soft); font-size: 14px; }
-.inventory-table td { color: var(--muted); font-size: 14px; }
-.inventory-table tr:last-child td { border-bottom: 0; }
 .timeline-list { display: grid; gap: 14px; }
 
 .sop-preview-layout { width: min(1180px, 100%); margin: 0 auto; padding-top: 34px; }

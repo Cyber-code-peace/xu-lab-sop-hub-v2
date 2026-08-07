@@ -682,104 +682,6 @@ const siteData = {
       "category": "转录调控"
     }
   ],
-  "reagents": [
-    {
-      "category": "抗体",
-      "name": "一抗 / 二抗",
-      "brand": "CST / Abcam / Proteintech / Servicebio",
-      "spec": "按靶点与宿主补充",
-      "supplier": "官网、泰坦、源叶、MCE",
-      "note": "记录靶点、货号、批号、稀释比例和保存位置。"
-    },
-    {
-      "category": "培养基",
-      "name": "DMEM / RPMI-1640",
-      "brand": "Gibco / BasalMedia / HyClone",
-      "spec": "500 mL",
-      "supplier": "泰坦、源叶、MCE",
-      "note": "标注高糖/低糖、是否含丙酮酸钠。"
-    },
-    {
-      "category": "培养基",
-      "name": "胎牛血清 FBS",
-      "brand": "Gibco / ExCell / PAN",
-      "spec": "500 mL",
-      "supplier": "泰坦、源叶",
-      "note": "需记录批号，避免不同批次混用。"
-    },
-    {
-      "category": "耗材",
-      "name": "培养皿 / 培养板 / EP 管",
-      "brand": "Corning / NEST / Axygen",
-      "spec": "6 cm、10 cm、6/12/24/96 孔",
-      "supplier": "泰坦、源叶、麦克林",
-      "note": "按无菌、低吸附、离心耐受规格区分。"
-    },
-    {
-      "category": "PCR 试剂",
-      "name": "PCR Mix / qPCR Mix",
-      "brand": "Vazyme / Takara / Yeasen",
-      "spec": "2x Mix，按实验补充",
-      "supplier": "泰坦、源叶、MCE",
-      "note": "记录酶类型、荧光染料和适配仪器。"
-    },
-    {
-      "category": "PCR 试剂",
-      "name": "Agarose / DNA Marker",
-      "brand": "Biowest / Vazyme / Takara",
-      "spec": "100 g；100 bp / 1 kb Marker",
-      "supplier": "麦克林、源叶、泰坦",
-      "note": "电泳相关试剂建议与 PCR SOP 联动维护。"
-    },
-    {
-      "category": "WB 试剂",
-      "name": "RIPA / PMSF / 抑制剂 Cocktail",
-      "brand": "Beyotime / Solarbio / Roche",
-      "spec": "100 mL；按浓度补充",
-      "supplier": "源叶、泰坦、麦克林",
-      "note": "裂解液强弱、抑制剂现配比例需写清。"
-    },
-    {
-      "category": "WB 试剂",
-      "name": "BCA / PVDF / ECL",
-      "brand": "Thermo / Bio-Rad / Millipore / Beyotime",
-      "spec": "按包装补充",
-      "supplier": "泰坦、源叶、MCE",
-      "note": "记录膜孔径、曝光体系和有效期。"
-    },
-    {
-      "category": "染色与免疫",
-      "name": "多聚甲醛 / DAPI / 封片剂",
-      "brand": "Servicebio / Beyotime / Solarbio",
-      "spec": "4% PFA；按试剂补充",
-      "supplier": "源叶、泰坦、麦克林",
-      "note": "与免疫荧光、免疫组化、HE 染色 SOP 对应。"
-    },
-    {
-      "category": "动物实验用品",
-      "name": "STZ / 麻醉剂 / 采血耗材",
-      "brand": "Sigma / Macklin / Servicebio",
-      "spec": "按伦理审批与批次补充",
-      "supplier": "麦克林、源叶、伊诺凯",
-      "note": "动物实验用品需同步伦理编号和安全要求。"
-    },
-    {
-      "category": "常规试剂",
-      "name": "PBS / TBST / Tris / SDS",
-      "brand": "Solarbio / Beyotime / Macklin",
-      "spec": "粉末或 10x 储液",
-      "supplier": "麦克林、泰坦、源叶",
-      "note": "建议记录配方、pH、配置日期和负责人。"
-    },
-    {
-      "category": "基质与迁移",
-      "name": "Matrigel / Transwell 小室",
-      "brand": "Corning / BD / NEST",
-      "spec": "按孔径和胶浓度补充",
-      "supplier": "泰坦、源叶、MCE",
-      "note": "与 Transwell SOP、细胞侵袭实验条件关联。"
-    }
-  ],
   "favorites": [
     {
       "type": "SOP",
@@ -938,16 +840,6 @@ function toolCard(tool) {
   `;
 }
 
-function reagentMiniCard(item) {
-  return `
-    <article class="mini-card">
-      <span class="pill">${escapeHtml(item.category)}</span>
-      <h3>${escapeHtml(item.name)}</h3>
-      <p>${escapeHtml(item.brand)}</p>
-    </article>
-  `;
-}
-
 function quickCard(item) {
   return `
     <a class="quick-card" ${cardLinkAttrs(item.url)}>
@@ -981,8 +873,6 @@ function renderHome() {
   if (vendors) vendors.innerHTML = siteData.vendors.slice(0, 4).map(vendorCard).join("");
   const tools = document.querySelector("#homeTools");
   if (tools) tools.innerHTML = siteData.tools.slice(0, 4).map(toolCard).join("");
-  const reagents = document.querySelector("#homeReagents");
-  if (reagents) reagents.innerHTML = siteData.reagents.slice(0, 4).map(reagentMiniCard).join("");
 }
 
 function renderSopDirectory() {
@@ -1000,21 +890,6 @@ function renderVendorDirectory() {
 function renderToolDirectory() {
   const grid = document.querySelector("#toolDirectory");
   if (grid) grid.innerHTML = siteData.tools.map(toolCard).join("");
-}
-
-function renderReagentDirectory() {
-  const body = document.querySelector("#reagentDirectory");
-  if (!body) return;
-  body.innerHTML = siteData.reagents.map((item) => `
-    <tr>
-      <td>${escapeHtml(item.category)}</td>
-      <td>${escapeHtml(item.name)}</td>
-      <td>${escapeHtml(item.brand)}</td>
-      <td>${escapeHtml(item.spec)}</td>
-      <td>${escapeHtml(item.supplier)}</td>
-      <td>${escapeHtml(item.note)}</td>
-    </tr>
-  `).join("");
 }
 
 function renderUpdateDirectory() {
@@ -1060,7 +935,6 @@ document.addEventListener("DOMContentLoaded", () => {
   renderSopDirectory();
   renderVendorDirectory();
   renderToolDirectory();
-  renderReagentDirectory();
   renderUpdateDirectory();
   initQuotes();
   initTransitions();

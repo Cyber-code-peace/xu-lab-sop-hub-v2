@@ -107,23 +107,6 @@ def build_tools(previous_tools: list[dict]) -> list[dict]:
     return tools
 
 
-def build_reagents() -> list[dict]:
-    return [
-        {"category": "抗体", "name": "一抗 / 二抗", "brand": "CST / Abcam / Proteintech / Servicebio", "spec": "按靶点与宿主补充", "supplier": "官网、泰坦、源叶、MCE", "note": "记录靶点、货号、批号、稀释比例和保存位置。"},
-        {"category": "培养基", "name": "DMEM / RPMI-1640", "brand": "Gibco / BasalMedia / HyClone", "spec": "500 mL", "supplier": "泰坦、源叶、MCE", "note": "标注高糖/低糖、是否含丙酮酸钠。"},
-        {"category": "培养基", "name": "胎牛血清 FBS", "brand": "Gibco / ExCell / PAN", "spec": "500 mL", "supplier": "泰坦、源叶", "note": "需记录批号，避免不同批次混用。"},
-        {"category": "耗材", "name": "培养皿 / 培养板 / EP 管", "brand": "Corning / NEST / Axygen", "spec": "6 cm、10 cm、6/12/24/96 孔", "supplier": "泰坦、源叶、麦克林", "note": "按无菌、低吸附、离心耐受规格区分。"},
-        {"category": "PCR 试剂", "name": "PCR Mix / qPCR Mix", "brand": "Vazyme / Takara / Yeasen", "spec": "2x Mix，按实验补充", "supplier": "泰坦、源叶、MCE", "note": "记录酶类型、荧光染料和适配仪器。"},
-        {"category": "PCR 试剂", "name": "Agarose / DNA Marker", "brand": "Biowest / Vazyme / Takara", "spec": "100 g；100 bp / 1 kb Marker", "supplier": "麦克林、源叶、泰坦", "note": "电泳相关试剂建议与 PCR SOP 联动维护。"},
-        {"category": "WB 试剂", "name": "RIPA / PMSF / 抑制剂 Cocktail", "brand": "Beyotime / Solarbio / Roche", "spec": "100 mL；按浓度补充", "supplier": "源叶、泰坦、麦克林", "note": "裂解液强弱、抑制剂现配比例需写清。"},
-        {"category": "WB 试剂", "name": "BCA / PVDF / ECL", "brand": "Thermo / Bio-Rad / Millipore / Beyotime", "spec": "按包装补充", "supplier": "泰坦、源叶、MCE", "note": "记录膜孔径、曝光体系和有效期。"},
-        {"category": "染色与免疫", "name": "多聚甲醛 / DAPI / 封片剂", "brand": "Servicebio / Beyotime / Solarbio", "spec": "4% PFA；按试剂补充", "supplier": "源叶、泰坦、麦克林", "note": "与免疫荧光、免疫组化、HE 染色 SOP 对应。"},
-        {"category": "动物实验用品", "name": "STZ / 麻醉剂 / 采血耗材", "brand": "Sigma / Macklin / Servicebio", "spec": "按伦理审批与批次补充", "supplier": "麦克林、源叶、伊诺凯", "note": "动物实验用品需同步伦理编号和安全要求。"},
-        {"category": "常规试剂", "name": "PBS / TBST / Tris / SDS", "brand": "Solarbio / Beyotime / Macklin", "spec": "粉末或 10x 储液", "supplier": "麦克林、泰坦、源叶", "note": "建议记录配方、pH、配置日期和负责人。"},
-        {"category": "基质与迁移", "name": "Matrigel / Transwell 小室", "brand": "Corning / BD / NEST", "spec": "按孔径和胶浓度补充", "supplier": "泰坦、源叶、MCE", "note": "与 Transwell SOP、细胞侵袭实验条件关联。"},
-    ]
-
-
 def topbar(prefix: str) -> str:
     return f"""    <header class=\"topbar\">
       <a class=\"brand\" href=\"{prefix}index.html\" aria-label=\"返回首页\">
@@ -138,7 +121,6 @@ def topbar(prefix: str) -> str:
         <a href=\"{prefix}pages/sop.html\">实验 SOP</a>
         <a href=\"{prefix}pages/suppliers.html\">药品供应商</a>
         <a href=\"{prefix}pages/tools.html\">科研工具</a>
-        <a href=\"{prefix}pages/reagents.html\">试剂耗材</a>
       </nav>
     </header>
 """
@@ -181,7 +163,6 @@ def write_index() -> None:
           <a class=\"bubble bubble-main bubble-sop\" href=\"./pages/sop.html\">实验<br />SOP</a>
           <a class=\"bubble bubble-main bubble-buy\" href=\"./pages/suppliers.html\">药品<br />供应商</a>
           <a class=\"bubble bubble-main bubble-tools\" href=\"./pages/tools.html\">科研<br />工具</a>
-          <a class=\"bubble bubble-small bubble-reagents\" href=\"./pages/reagents.html\">试剂<br />耗材</a>
         </div>
       </section>
 
@@ -221,16 +202,6 @@ def write_index() -> None:
         <div class=\"preview-row\" id=\"homeTools\"></div>
       </section>
 
-      <section class=\"section section-muted tight-section\" id=\"reagents\">
-        <div class=\"section-head\">
-          <div>
-            <p class=\"eyebrow\">Inventory</p>
-            <h2>常用试剂与耗材</h2>
-          </div>
-          <a class=\"button ghost\" href=\"./pages/reagents.html\">查看清单</a>
-        </div>
-        <div class=\"preview-row\" id=\"homeReagents\"></div>
-      </section>
     </main>
     <script src=\"./app.js\"></script>
 """
@@ -251,7 +222,6 @@ def write_pages() -> None:
         "sop.html": ("Experiments", "实验 SOP 目录", "按实验类型和标签筛选 SOP，进入页面可预览和下载原始 PDF。", "sop-page-main"),
         "suppliers.html": ("Purchasing", "药品供应商", "常用采购网站集中管理，点击卡片即可打开对应平台。", "supplier-page"),
         "tools.html": ("Research Tools", "科研工具与数据库", "整合文献检索、组学数据、通路富集、图像分析和科研作图入口。", "tool-page"),
-        "reagents.html": ("Inventory", "常用试剂与耗材", "按抗体、培养基、PCR、WB、染色、动物实验等类别维护常用物资。", "reagent-page"),
         "updates.html": ("Recent", "最近更新", "集中查看 SOP 最近新增和修改记录，便于追踪资料版本。", "update-page"),
     }
     for filename, (kicker, title, desc, page_type) in pages.items():
@@ -276,23 +246,6 @@ def write_pages() -> None:
             body += "      <section class=\"directory-grid vendor-grid\" id=\"vendorDirectory\"></section>\n"
         elif page_type == "tool-page":
             body += "      <section class=\"directory-grid tool-grid\" id=\"toolDirectory\"></section>\n"
-        elif page_type == "reagent-page":
-            body += """      <section class=\"table-wrap\">
-        <table class=\"inventory-table\">
-          <thead>
-            <tr>
-              <th>类别</th>
-              <th>名称</th>
-              <th>品牌</th>
-              <th>货号 / 规格</th>
-              <th>常用供应商</th>
-              <th>备注</th>
-            </tr>
-          </thead>
-          <tbody id=\"reagentDirectory\"></tbody>
-        </table>
-      </section>
-"""
         elif page_type == "update-page":
             body += "      <section class=\"timeline-list\" id=\"updateDirectory\"></section>\n"
         body += "    </main>\n    <script src=\"../app.js\"></script>\n"
@@ -440,16 +393,6 @@ function toolCard(tool) {{
   `;
 }}
 
-function reagentMiniCard(item) {{
-  return `
-    <article class="mini-card">
-      <span class="pill">${{escapeHtml(item.category)}}</span>
-      <h3>${{escapeHtml(item.name)}}</h3>
-      <p>${{escapeHtml(item.brand)}}</p>
-    </article>
-  `;
-}}
-
 function quickCard(item) {{
   return `
     <a class="quick-card" ${{cardLinkAttrs(item.url)}}>
@@ -483,8 +426,6 @@ function renderHome() {{
   if (vendors) vendors.innerHTML = siteData.vendors.slice(0, 4).map(vendorCard).join("");
   const tools = document.querySelector("#homeTools");
   if (tools) tools.innerHTML = siteData.tools.slice(0, 4).map(toolCard).join("");
-  const reagents = document.querySelector("#homeReagents");
-  if (reagents) reagents.innerHTML = siteData.reagents.slice(0, 4).map(reagentMiniCard).join("");
 }}
 
 function renderSopDirectory() {{
@@ -502,21 +443,6 @@ function renderVendorDirectory() {{
 function renderToolDirectory() {{
   const grid = document.querySelector("#toolDirectory");
   if (grid) grid.innerHTML = siteData.tools.map(toolCard).join("");
-}}
-
-function renderReagentDirectory() {{
-  const body = document.querySelector("#reagentDirectory");
-  if (!body) return;
-  body.innerHTML = siteData.reagents.map((item) => `
-    <tr>
-      <td>${{escapeHtml(item.category)}}</td>
-      <td>${{escapeHtml(item.name)}}</td>
-      <td>${{escapeHtml(item.brand)}}</td>
-      <td>${{escapeHtml(item.spec)}}</td>
-      <td>${{escapeHtml(item.supplier)}}</td>
-      <td>${{escapeHtml(item.note)}}</td>
-    </tr>
-  `).join("");
 }}
 
 function renderUpdateDirectory() {{
@@ -562,7 +488,6 @@ document.addEventListener("DOMContentLoaded", () => {{
   renderSopDirectory();
   renderVendorDirectory();
   renderToolDirectory();
-  renderReagentDirectory();
   renderUpdateDirectory();
   initQuotes();
   initTransitions();
@@ -730,7 +655,6 @@ main { padding: 0 clamp(18px, 5vw, 68px) 48px; }
 .bubble-sop { --x: 4%; --y: 18%; --delay: 0s; }
 .bubble-buy { --x: 38%; --y: 4%; --delay: -1.2s; }
 .bubble-tools { --x: 62%; --y: 34%; --delay: -2.2s; }
-.bubble-reagents { --x: 29%; --y: 58%; --delay: -3s; }
 
 .section { padding: 40px 0; border-top: 1px solid var(--line); }
 .tight-section { padding: 34px 0; }
@@ -891,23 +815,6 @@ h3 { margin-bottom: 8px; font-size: 19px; }
 }
 .tab[aria-selected="true"], .tag-tab[aria-selected="true"] { border-color: var(--accent); background: var(--accent); color: #fff; }
 
-.table-wrap {
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-}
-.inventory-table { width: 100%; border-collapse: collapse; min-width: 920px; }
-.inventory-table th, .inventory-table td {
-  border-bottom: 1px solid var(--line);
-  padding: 14px 16px;
-  text-align: left;
-  vertical-align: top;
-  line-height: 1.65;
-}
-.inventory-table th { color: var(--accent-strong); background: var(--surface-soft); font-size: 14px; }
-.inventory-table td { color: var(--muted); font-size: 14px; }
-.inventory-table tr:last-child td { border-bottom: 0; }
 .timeline-list { display: grid; gap: 14px; }
 
 .sop-preview-layout { width: min(1180px, 100%); margin: 0 auto; padding-top: 34px; }
@@ -1057,7 +964,6 @@ def main() -> None:
     previous = load_previous_data()
     sops = enrich_sops(previous["sops"])
     tools = build_tools(previous["tools"])
-    reagents = build_reagents()
     favorites = [
         {"type": "SOP", "title": "WB 实验", "desc": "蛋白实验高频入口", "url": next(s["page"] for s in sops if s["title"] == "WB 实验")},
         {"type": "SOP", "title": "PCR / 电泳", "desc": "PCR 仪和电泳仪使用", "url": next(s["page"] for s in sops if s["title"] == "PCR 仪以及电泳仪")},
@@ -1071,7 +977,6 @@ def main() -> None:
         "sops": sops,
         "vendors": previous["vendors"],
         "tools": tools,
-        "reagents": reagents,
         "favorites": favorites,
         "quotes": previous["quotes"],
     }
