@@ -875,6 +875,18 @@ function renderHome() {
   if (tools) tools.innerHTML = siteData.tools.slice(0, 4).map(toolCard).join("");
 }
 
+function renderRecentStrip() {
+  const tags = document.querySelector("#recentTags");
+  if (!tags) return;
+  const recent = recentSops().slice(0, 8);
+  tags.innerHTML = recent.map((sop) => `
+    <a class="recent-tag transition-link" href="${withBase(sop.page)}">
+      <time>${escapeHtml(sop.updateLabel)}</time>
+      <span>${escapeHtml(sop.title)}</span>
+    </a>
+  `).join("");
+}
+
 function renderSopDirectory() {
   const grid = document.querySelector("#sopDirectory");
   if (!grid) return;
@@ -932,6 +944,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderTabs();
   renderTagTabs();
   renderHome();
+  renderRecentStrip();
   renderSopDirectory();
   renderVendorDirectory();
   renderToolDirectory();
