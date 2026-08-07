@@ -429,7 +429,8 @@ const siteData = {
       ],
       "updateDate": "",
       "updateLabel": "待补充",
-      "favorite": false
+      "favorite": false,
+      "uploadDate": "2026-07-31"
     },
     {
       "file": "Figure Database.pdf",
@@ -445,7 +446,8 @@ const siteData = {
       ],
       "updateDate": "",
       "updateLabel": "待补充",
-      "favorite": false
+      "favorite": false,
+      "uploadDate": "2026-07-31"
     },
     {
       "file": "ZYC整理作图-传workshop.pdf",
@@ -461,7 +463,8 @@ const siteData = {
       ],
       "updateDate": "",
       "updateLabel": "待补充",
-      "favorite": false
+      "favorite": false,
+      "uploadDate": "2026-07-31"
     },
     {
       "file": "CCK8.pdf",
@@ -476,7 +479,8 @@ const siteData = {
       "updateLabel": "待补充",
       "favorite": false,
       "page": "./sop-pages/sop-30.html",
-      "pdf": "./experiment/CCK8.pdf"
+      "pdf": "./experiment/CCK8.pdf",
+      "uploadDate": "2026-08-07"
     },
     {
       "file": "Graphpad-Prism-5.0-解析.pdf",
@@ -492,7 +496,8 @@ const siteData = {
       "updateLabel": "待补充",
       "favorite": false,
       "page": "./sop-pages/sop-31.html",
-      "pdf": "./experiment/Graphpad-Prism-5.0-解析.pdf"
+      "pdf": "./experiment/Graphpad-Prism-5.0-解析.pdf",
+      "uploadDate": "2026-08-07"
     },
     {
       "file": "使用Endnote在Office Word中插入文献的方法.pdf",
@@ -508,7 +513,8 @@ const siteData = {
       "updateLabel": "待补充",
       "favorite": false,
       "page": "./sop-pages/sop-32.html",
-      "pdf": "./experiment/使用Endnote在Office Word中插入文献的方法.pdf"
+      "pdf": "./experiment/使用Endnote在Office Word中插入文献的方法.pdf",
+      "uploadDate": "2026-08-07"
     },
     {
       "file": "动物药物体内使用浓度折算方式-26.8.7.pdf",
@@ -524,7 +530,8 @@ const siteData = {
       "updateLabel": "2026-08-07",
       "favorite": false,
       "page": "./sop-pages/sop-33.html",
-      "pdf": "./experiment/动物药物体内使用浓度折算方式-26.8.7.pdf"
+      "pdf": "./experiment/动物药物体内使用浓度折算方式-26.8.7.pdf",
+      "uploadDate": "2026-08-07"
     },
     {
       "file": "细胞计数法.pdf",
@@ -539,7 +546,8 @@ const siteData = {
       "updateLabel": "待补充",
       "favorite": false,
       "page": "./sop-pages/sop-34.html",
-      "pdf": "./experiment/细胞计数法.pdf"
+      "pdf": "./experiment/细胞计数法.pdf",
+      "uploadDate": "2026-08-07"
     }
   ],
   "vendors": [
@@ -851,9 +859,10 @@ function quickCard(item) {
 }
 
 function updateCard(sop) {
+  const dateLabel = sop.uploadDate ? formatDateLabel(sop.uploadDate) : sop.updateLabel;
   return `
     <a class="update-card transition-link" href="${withBase(sop.page)}">
-      <time>${escapeHtml(sop.updateLabel)}</time>
+      <time>${escapeHtml(dateLabel)}</time>
       <h3>${escapeHtml(sop.title)}</h3>
       <p>${escapeHtml(sop.category)} · ${escapeHtml(sop.tags.join(" / "))}</p>
     </a>
@@ -862,8 +871,12 @@ function updateCard(sop) {
 
 function recentSops() {
   return [...siteData.sops]
-    .filter((sop) => sop.updateDate)
-    .sort((a, b) => b.updateDate.localeCompare(a.updateDate));
+    .filter((sop) => sop.uploadDate || sop.updateDate)
+    .sort((a, b) => {
+      const aDate = a.uploadDate || a.updateDate;
+      const bDate = b.uploadDate || b.updateDate;
+      return bDate.localeCompare(aDate);
+    });
 }
 
 function renderHome() {
@@ -875,16 +888,40 @@ function renderHome() {
   if (tools) tools.innerHTML = siteData.tools.slice(0, 4).map(toolCard).join("");
 }
 
+function recentUploadBatches() {
+  const withUpload = siteData.sops.filter((sop) => sop.uploadDate);
+  const batches = {};
+  for (const sop of withUpload) {
+    if (!batches[sop.uploadDate]) batches[sop.uploadDate] = [];
+    batches[sop.uploadDate].push(sop);
+  }
+  return Object.keys(batches)
+    .sort((a, b) => b.localeCompare(a))
+    .slice(0, 2)
+    .map((date) => ({ date, sops: batches[date] }));
+}
+
+function formatDateLabel(iso) {
+  const parts = iso.split("-");
+  return `${parseInt(parts[1], 10)}月${parseInt(parts[2], 10)}日`;
+}
+
 function renderRecentStrip() {
   const tags = document.querySelector("#recentTags");
   if (!tags) return;
-  const recent = recentSops().slice(0, 8);
-  tags.innerHTML = recent.map((sop) => `
-    <a class="recent-tag transition-link" href="${withBase(sop.page)}">
-      <time>${escapeHtml(sop.updateLabel)}</time>
-      <span>${escapeHtml(sop.title)}</span>
-    </a>
-  `).join("");
+  const batches = recentUploadBatches();
+  if (!batches.length) return;
+  let html = "";
+  batches.forEach((batch, i) => {
+    if (i > 0) html += `<span class="recent-batch-divider"></span>`;
+    html += `<span class="recent-batch-label">${escapeHtml(formatDateLabel(batch.date))}</span>`;
+    html += batch.sops.map((sop) => `
+      <a class="recent-tag transition-link" href="${withBase(sop.page)}">
+        <span>${escapeHtml(sop.title)}</span>
+      </a>
+    `).join("");
+  });
+  tags.innerHTML = html;
 }
 
 function renderSopDirectory() {

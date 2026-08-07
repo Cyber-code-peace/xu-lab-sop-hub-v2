@@ -14,6 +14,12 @@ PAGES = ROOT / "pages"
 SOP_PAGES = ROOT / "sop-pages"
 DOWNLOADS = ROOT / "downloads"
 
+UPLOAD_BATCHES = {
+    27: "2026-07-31", 28: "2026-07-31", 29: "2026-07-31",
+    30: "2026-08-07", 31: "2026-08-07", 32: "2026-08-07",
+    33: "2026-08-07", 34: "2026-08-07",
+}
+
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
@@ -77,6 +83,8 @@ def enrich_sops(sops: list[dict]) -> list[dict]:
         item["tags"] = infer_tags(item)
         item["updateDate"], item["updateLabel"] = infer_update_date(item)
         item["favorite"] = item["title"] in {"WB 实验", "PCR 仪以及电泳仪", "PCR 仪及电泳仪使用", "细胞传代"}
+        if "uploadDate" not in item and index in UPLOAD_BATCHES:
+            item["uploadDate"] = UPLOAD_BATCHES[index]
         enriched.append(item)
     return enriched
 
@@ -410,9 +418,10 @@ function quickCard(item) {{
 }}
 
 function updateCard(sop) {{
+  const dateLabel = sop.uploadDate ? formatDateLabel(sop.uploadDate) : sop.updateLabel;
   return `
     <a class="update-card transition-link" href="${{withBase(sop.page)}}">
-      <time>${{escapeHtml(sop.updateLabel)}}</time>
+      <time>${{escapeHtml(dateLabel)}}</time>
       <h3>${{escapeHtml(sop.title)}}</h3>
       <p>${{escapeHtml(sop.category)}} · ${{escapeHtml(sop.tags.join(" / "))}}</p>
     </a>
@@ -421,8 +430,12 @@ function updateCard(sop) {{
 
 function recentSops() {{
   return [...siteData.sops]
-    .filter((sop) => sop.updateDate)
-    .sort((a, b) => b.updateDate.localeCompare(a.updateDate));
+    .filter((sop) => sop.uploadDate || sop.updateDate)
+    .sort((a, b) => {{
+      const aDate = a.uploadDate || a.updateDate;
+      const bDate = b.uploadDate || b.updateDate;
+      return bDate.localeCompare(aDate);
+    }});
 }}
 
 function renderHome() {{
@@ -434,16 +447,40 @@ function renderHome() {{
   if (tools) tools.innerHTML = siteData.tools.slice(0, 4).map(toolCard).join("");
 }}
 
+function recentUploadBatches() {{
+  const withUpload = siteData.sops.filter((sop) => sop.uploadDate);
+  const batches = {{}};
+  for (const sop of withUpload) {{
+    if (!batches[sop.uploadDate]) batches[sop.uploadDate] = [];
+    batches[sop.uploadDate].push(sop);
+  }}
+  return Object.keys(batches)
+    .sort((a, b) => b.localeCompare(a))
+    .slice(0, 2)
+    .map((date) => ({{ date, sops: batches[date] }}));
+}}
+
+function formatDateLabel(iso) {{
+  const parts = iso.split("-");
+  return `${{parseInt(parts[1], 10)}}月${{parseInt(parts[2], 10)}}日`;
+}}
+
 function renderRecentStrip() {{
   const tags = document.querySelector("#recentTags");
   if (!tags) return;
-  const recent = recentSops().slice(0, 8);
-  tags.innerHTML = recent.map((sop) => `
-    <a class="recent-tag transition-link" href="${{withBase(sop.page)}}">
-      <time>${{escapeHtml(sop.updateLabel)}}</time>
-      <span>${{escapeHtml(sop.title)}}</span>
-    </a>
-  `).join("");
+  const batches = recentUploadBatches();
+  if (!batches.length) return;
+  let html = "";
+  batches.forEach((batch, i) => {{
+    if (i > 0) html += `<span class="recent-batch-divider"></span>`;
+    html += `<span class="recent-batch-label">${{escapeHtml(formatDateLabel(batch.date))}}</span>`;
+    html += batch.sops.map((sop) => `
+      <a class="recent-tag transition-link" href="${{withBase(sop.page)}}">
+        <span>${{escapeHtml(sop.title)}}</span>
+      </a>
+    `).join("");
+  }});
+  tags.innerHTML = html;
 }}
 
 function renderSopDirectory() {{
