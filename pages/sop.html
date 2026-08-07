@@ -20,6 +20,7 @@
       <div class="designer">Designed by ZLZ</div>
       <nav class="nav">
         <a href="../pages/sop.html">实验 SOP</a>
+        <a href="../pages/updates.html">最近更新</a>
         <a href="../pages/suppliers.html">药品供应商</a>
         <a href="../pages/tools.html">科研工具</a>
       </nav>
@@ -41,6 +42,15 @@
           <a class="button primary" href="../downloads/all-sop-pdfs.zip" download>下载全部 SOP</a>
         </div>
       </section>
+      <div class="sort-bar">
+        <span class="result-count" id="sopResultCount"></span>
+        <select class="sort-select" id="sopSortSelect">
+          <option value="default">默认排序</option>
+          <option value="date-desc">最新优先</option>
+          <option value="date-asc">最早优先</option>
+          <option value="title">按名称</option>
+        </select>
+      </div>
       <section class="directory-grid sop-grid" id="sopDirectory"></section>
     </main>
     <script src="../app.js"></script>

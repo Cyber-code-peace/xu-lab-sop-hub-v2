@@ -127,6 +127,7 @@ def topbar(prefix: str) -> str:
       <div class=\"designer\">Designed by ZLZ</div>
       <nav class=\"nav\">
         <a href=\"{prefix}pages/sop.html\">实验 SOP</a>
+        <a href=\"{prefix}pages/updates.html\">最近更新</a>
         <a href=\"{prefix}pages/suppliers.html\">药品供应商</a>
         <a href=\"{prefix}pages/tools.html\">科研工具</a>
       </nav>
@@ -191,6 +192,7 @@ def write_index() -> None:
             <a class=\"button ghost\" href=\"./pages/sop.html\">进入 SOP 目录</a>
           </div>
         </div>
+        <div class=\"cat-quick-access\" id=\"homeCatAccess\"></div>
         <div class=\"preview-row\" id=\"homeSops\"></div>
       </section>
 
@@ -254,12 +256,21 @@ def write_pages() -> None:
           <a class=\"button primary\" href=\"../downloads/all-sop-pdfs.zip\" download>下载全部 SOP</a>
         </div>
       </section>
+      <div class=\"sort-bar\">
+        <span class=\"result-count\" id=\"sopResultCount\"></span>
+        <select class=\"sort-select\" id=\"sopSortSelect\">
+          <option value=\"default\">默认排序</option>
+          <option value=\"date-desc\">最新优先</option>
+          <option value=\"date-asc\">最早优先</option>
+          <option value=\"title\">按名称</option>
+        </select>
+      </div>
       <section class=\"directory-grid sop-grid\" id=\"sopDirectory\"></section>
 """
         elif page_type == "supplier-page":
-            body += "      <section class=\"directory-grid vendor-grid\" id=\"vendorDirectory\"></section>\n"
+            body += "      <div class=\"vendor-search-bar\">\n        <label class=\"search wide-search\">\n          <span>搜索</span>\n          <input id=\"vendorSearchInput\" type=\"search\" placeholder=\"输入供应商名称或网址\" />\n        </label>\n      </div>\n      <section class=\"directory-grid vendor-grid\" id=\"vendorDirectory\"></section>\n"
         elif page_type == "tool-page":
-            body += "      <section class=\"directory-grid tool-grid\" id=\"toolDirectory\"></section>\n"
+            body += "      <div class=\"tool-filter-tabs\" id=\"toolFilterTabs\"></div>\n      <section class=\"directory-grid tool-grid\" id=\"toolDirectory\"></section>\n"
         elif page_type == "update-page":
             body += "      <section class=\"timeline-list\" id=\"updateDirectory\"></section>\n"
         body += "    </main>\n    <script src=\"../app.js\"></script>\n"
@@ -315,6 +326,19 @@ const siteData = {json.dumps(data, ensure_ascii=False, indent=2)};
 let selectedCategory = "全部";
 let selectedTag = "全部";
 let searchTerm = "";
+let sortOption = "default";
+let selectedToolCategory = "全部";
+let vendorSearchTerm = "";
+
+const categoryColors = {{
+  "细胞实验": "var(--accent)",
+  "分子与基因": "var(--plum)",
+  "蛋白与免疫": "var(--cool)",
+  "组织病理": "var(--amber)",
+  "动物实验": "var(--warm)",
+  "仪器与配方": "var(--indigo)",
+  "数据与网络药理": "var(--rose)"
+}};
 
 function escapeHtml(value) {{
   return String(value).replace(/[&<>"']/g, (char) => ({{
@@ -452,10 +476,63 @@ function recentSops() {{
 function renderHome() {{
   const sops = document.querySelector("#homeSops");
   if (sops) sops.innerHTML = siteData.sops.filter((sop) => sop.favorite).slice(0, 4).map((sop, i) => sopCard(sop, i)).join("");
+
+  const catAccess = document.querySelector("#homeCatAccess");
+  if (catAccess) {{
+    const cats = siteData.categories.filter((c) => c !== "全部");
+    catAccess.innerHTML = cats.map((cat, i) => {{
+      const count = siteData.sops.filter((s) => s.category === cat).length;
+      const color = categoryColors[cat] || "var(--accent)";
+      return `<a class="cat-quick-item transition-link" href="${{withBase("./pages/sop.html")}}" style="--i:${{i}}; --cat-color:${{color}}" data-cat="${{escapeHtml(cat)}}">
+        <span class="cat-quick-dot"></span>
+        ${{escapeHtml(cat)}}
+        <span class="cat-quick-count">${{count}}</span>
+      </a>`;
+    }}).join("");
+  }}
+
   const vendors = document.querySelector("#homeVendors");
-  if (vendors) vendors.innerHTML = siteData.vendors.slice(0, 4).map((vendor, i) => vendorCard(vendor, i)).join("");
+  if (vendors) {{
+    vendors.className = "vendor-compact-grid";
+    vendors.innerHTML = siteData.vendors.slice(0, 8).map((vendor, i) => `
+      <a class="vendor-compact-card" href="${{vendor.value}}" target="_blank" rel="noopener" style="--i:${{i}}">
+        <span class="vendor-compact-icon">${{escapeHtml(vendor.name.slice(0, 2))}}</span>
+        <div class="vendor-compact-info">
+          <strong>${{escapeHtml(vendor.name)}}</strong>
+          <span>点击打开采购平台</span>
+        </div>
+      </a>
+    `).join("");
+  }}
+
   const tools = document.querySelector("#homeTools");
-  if (tools) tools.innerHTML = siteData.tools.slice(0, 4).map((tool, i) => toolCard(tool, i)).join("");
+  if (tools) {{
+    tools.className = "tools-grouped";
+    const groups = {{}};
+    siteData.tools.forEach((t) => {{
+      if (!groups[t.category]) groups[t.category] = [];
+      groups[t.category].push(t);
+    }});
+    let html = "";
+    let gi = 0;
+    for (const [cat, catTools] of Object.entries(groups)) {{
+      html += `<div class="tool-group">`;
+      html += `<div class="tool-group-head"><span class="tool-group-label">${{escapeHtml(cat)}}</span><span class="tool-group-line"></span></div>`;
+      html += `<div class="tool-group-grid">`;
+      html += catTools.map((t, i) => `
+        <a class="tool-mini-card" href="${{t.url}}" target="_blank" rel="noopener" style="--i:${{gi + i}}">
+          <span class="tool-mini-mark">${{escapeHtml(t.name.slice(0, 2))}}</span>
+          <div class="tool-mini-info">
+            <strong>${{escapeHtml(t.name)}}</strong>
+            <span>${{escapeHtml(t.url.replace(/^https?:\\/\\//, "").replace(/\\/$/, ""))}}</span>
+          </div>
+        </a>
+      `).join("");
+      html += `</div></div>`;
+      gi += catTools.length;
+    }}
+    tools.innerHTML = html;
+  }}
 }}
 
 function recentUploadBatches() {{
@@ -494,21 +571,47 @@ function renderRecentStrip() {{
   tags.innerHTML = html;
 }}
 
+function sortedSops(sops) {{
+  const list = [...sops];
+  if (sortOption === "date-desc") {{
+    list.sort((a, b) => (b.uploadDate || b.updateDate || "").localeCompare(a.uploadDate || a.updateDate || ""));
+  }} else if (sortOption === "date-asc") {{
+    list.sort((a, b) => (a.uploadDate || a.updateDate || "").localeCompare(b.uploadDate || b.updateDate || ""));
+  }} else if (sortOption === "title") {{
+    list.sort((a, b) => a.title.localeCompare(b.title, "zh-CN"));
+  }}
+  return list;
+}}
+
 function renderSopDirectory() {{
   const grid = document.querySelector("#sopDirectory");
   if (!grid) return;
-  const sops = filteredSops();
+  const sops = sortedSops(filteredSops());
+  const countEl = document.querySelector("#sopResultCount");
+  if (countEl) countEl.innerHTML = `共 <strong>${{sops.length}}</strong> 项 SOP`;
   grid.innerHTML = sops.length ? sops.map((sop, i) => sopCard(sop, i)).join("") : `<div class="empty">没有找到匹配的 SOP。</div>`;
+}}
+
+function filteredVendors() {{
+  const term = vendorSearchTerm.trim().toLowerCase();
+  if (!term) return siteData.vendors;
+  return siteData.vendors.filter((v) => v.name.toLowerCase().includes(term) || v.value.toLowerCase().includes(term));
 }}
 
 function renderVendorDirectory() {{
   const grid = document.querySelector("#vendorDirectory");
-  if (grid) grid.innerHTML = siteData.vendors.map((vendor, i) => vendorCard(vendor, i)).join("");
+  if (!grid) return;
+  const vendors = filteredVendors();
+  grid.innerHTML = vendors.length ? vendors.map((vendor, i) => vendorCard(vendor, i)).join("") : `<div class="empty">没有找到匹配的供应商。</div>`;
 }}
 
 function renderToolDirectory() {{
   const grid = document.querySelector("#toolDirectory");
-  if (grid) grid.innerHTML = siteData.tools.map((tool, i) => toolCard(tool, i)).join("");
+  if (!grid) return;
+  const tools = selectedToolCategory === "全部"
+    ? siteData.tools
+    : siteData.tools.filter((t) => t.category === selectedToolCategory);
+  grid.innerHTML = tools.length ? tools.map((tool, i) => toolCard(tool, i)).join("") : `<div class="empty">没有找到匹配的工具。</div>`;
 }}
 
 function renderUpdateDirectory() {{
@@ -577,7 +680,8 @@ function initThemeSwitcher() {{
     {{ id: "mint", label: "薄荷" }},
     {{ id: "aurora", label: "极光" }},
     {{ id: "dawn", label: "晨曦" }},
-    {{ id: "midnight", label: "暗夜" }}
+    {{ id: "midnight", label: "暗夜" }},
+    {{ id: "auto", label: "跟随系统" }}
   ];
   const switcher = document.createElement("div");
   switcher.className = "theme-switcher";
@@ -589,9 +693,19 @@ function initThemeSwitcher() {{
     dot.setAttribute("type", "button");
     dot.setAttribute("title", t.label + "主题");
     dot.setAttribute("aria-label", t.label + "主题");
+    if (t.id === "auto") {{
+      dot.style.background = "conic-gradient(from 0deg, #00b894, #6c5ce7, #ff5722, #7c4dff, #00b894)";
+    }}
     dot.addEventListener("click", () => {{
-      document.documentElement.setAttribute("data-theme", t.id);
-      localStorage.setItem("xu-lab-theme", t.id);
+      if (t.id === "auto") {{
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const autoTheme = prefersDark ? "midnight" : "mint";
+        document.documentElement.setAttribute("data-theme", autoTheme);
+        localStorage.setItem("xu-lab-theme", "auto");
+      }} else {{
+        document.documentElement.setAttribute("data-theme", t.id);
+        localStorage.setItem("xu-lab-theme", t.id);
+      }}
       switcher.querySelectorAll(".theme-dot").forEach((d) =>
         d.classList.toggle("active", d.dataset.theme === t.id)
       );
@@ -601,9 +715,324 @@ function initThemeSwitcher() {{
   const nav = topbar.querySelector(".nav");
   if (nav) nav.insertBefore(switcher, nav.firstChild);
   else topbar.appendChild(switcher);
+
+  if (saved === "auto") {{
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", prefersDark ? "midnight" : "mint");
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    mq.addEventListener("change", (e) => {{
+      if (localStorage.getItem("xu-lab-theme") === "auto") {{
+        document.documentElement.setAttribute("data-theme", e.matches ? "midnight" : "mint");
+      }}
+    }});
+  }}
+}}
+
+function injectUpdatesNav() {{
+  const nav = document.querySelector(".nav");
+  if (!nav) return;
+  if (nav.querySelector('a[data-nav="updates"]')) return;
+  const link = document.createElement("a");
+  link.setAttribute("href", withBase("./pages/updates.html"));
+  link.setAttribute("data-nav", "updates");
+  link.textContent = "最近更新";
+  const sopLink = nav.querySelector('a[href*="sop.html"]');
+  if (sopLink && sopLink.nextSibling) {{
+    nav.insertBefore(link, sopLink.nextSibling);
+  }} else {{
+    nav.appendChild(link);
+  }}
+}}
+
+function initFooter() {{
+  const existing = document.querySelector(".site-footer");
+  if (existing) return;
+  const footer = document.createElement("footer");
+  footer.className = "site-footer";
+  const lastUpdate = recentSops()[0];
+  const lastDate = lastUpdate ? (lastUpdate.uploadDate || lastUpdate.updateDate || "") : "";
+  footer.innerHTML = `
+    <div class="site-footer-inner">
+      <div class="site-footer-left">
+        <span class="site-footer-mark">XL</span>
+        <div class="site-footer-text">
+          <strong>Xu Lab SOP Hub</strong><br />
+          课题组实验资料库 · Designed by ZLZ${{lastDate ? ` · 最近更新 ${{lastDate}}` : ""}}
+        </div>
+      </div>
+      <div class="site-footer-right">
+        <a href="${{withBase("./index.html")}}">首页</a>
+        <a href="${{withBase("./pages/sop.html")}}">实验 SOP</a>
+        <a href="https://github.com/Cyber-code-peace/xu-lab-sop-hub-v2" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(footer);
+}}
+
+function initGlobalSearch() {{
+  const nav = document.querySelector(".nav");
+  if (!nav) return;
+  if (nav.querySelector(".search-trigger")) return;
+  const trigger = document.createElement("button");
+  trigger.className = "search-trigger";
+  trigger.setAttribute("type", "button");
+  trigger.setAttribute("aria-label", "搜索");
+  trigger.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>`;
+  trigger.addEventListener("click", () => openSearchOverlay());
+  nav.appendChild(trigger);
+
+  if (!document.querySelector(".search-overlay")) {{
+    const overlay = document.createElement("div");
+    overlay.className = "search-overlay";
+    overlay.innerHTML = `
+      <div class="search-overlay-box">
+        <div class="search-overlay-input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input class="search-overlay-input" type="search" placeholder="搜索 SOP、工具、供应商..." />
+          <button class="search-overlay-close" type="button">ESC</button>
+        </div>
+        <div class="search-overlay-results"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", (e) => {{
+      if (e.target === overlay) closeSearchOverlay();
+    }});
+    const input = overlay.querySelector(".search-overlay-input");
+    input.addEventListener("input", () => renderSearchResults(input.value));
+    const closeBtn = overlay.querySelector(".search-overlay-close");
+    closeBtn.addEventListener("click", closeSearchOverlay);
+    document.addEventListener("keydown", (e) => {{
+      if (e.key === "Escape" && overlay.classList.contains("open")) closeSearchOverlay();
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {{
+        e.preventDefault();
+        openSearchOverlay();
+      }}
+    }});
+  }}
+}}
+
+function openSearchOverlay() {{
+  const overlay = document.querySelector(".search-overlay");
+  if (!overlay) return;
+  overlay.classList.add("open");
+  setTimeout(() => {{
+    const input = overlay.querySelector(".search-overlay-input");
+    if (input) input.focus();
+  }}, 100);
+}}
+
+function closeSearchOverlay() {{
+  const overlay = document.querySelector(".search-overlay");
+  if (!overlay) return;
+  overlay.classList.remove("open");
+  const input = overlay.querySelector(".search-overlay-input");
+  if (input) input.value = "";
+  const results = overlay.querySelector(".search-overlay-results");
+  if (results) results.innerHTML = "";
+}}
+
+function renderSearchResults(query) {{
+  const results = document.querySelector(".search-overlay-results");
+  if (!results) return;
+  const term = query.trim().toLowerCase();
+  if (!term) {{ results.innerHTML = ""; return; }}
+  const items = [];
+  siteData.sops.forEach((sop) => {{
+    if (`${{sop.title}} ${{sop.author}} ${{sop.category}} ${{sop.tags.join(" ")}}`.toLowerCase().includes(term)) {{
+      items.push({{ type: "SOP", title: sop.title, desc: `${{sop.category}} · ${{sop.author}}`, url: withBase(sop.page) }});
+    }}
+  }});
+  siteData.tools.forEach((tool) => {{
+    if (`${{tool.name}} ${{tool.category}} ${{tool.desc}}`.toLowerCase().includes(term)) {{
+      items.push({{ type: "工具", title: tool.name, desc: tool.category, url: tool.url, external: true }});
+    }}
+  }});
+  siteData.vendors.forEach((vendor) => {{
+    if (`${{vendor.name}} ${{vendor.value}}`.toLowerCase().includes(term)) {{
+      items.push({{ type: "供应商", title: vendor.name, desc: vendor.value, url: vendor.value, external: true }});
+    }}
+  }});
+  const sliced = items.slice(0, 12);
+  results.innerHTML = sliced.length ? sliced.map((item) => `
+    <a class="search-result-item" href="${{item.url}}" ${{item.external ? 'target="_blank" rel="noopener"' : ""}}>
+      <span class="search-result-type">${{escapeHtml(item.type)}}</span>
+      <div class="search-result-info">
+        <strong>${{escapeHtml(item.title)}}</strong>
+        <span>${{escapeHtml(item.desc)}}</span>
+      </div>
+    </a>
+  `).join("") : `<div class="search-overlay-empty">没有找到匹配的结果</div>`;
+}}
+
+function initBreadcrumb() {{
+  const layout = document.querySelector(".sop-preview-layout");
+  if (!layout) return;
+  if (layout.querySelector(".breadcrumb")) return;
+  const backLink = layout.querySelector(".back-link");
+  if (!backLink) return;
+  const titleEl = layout.querySelector(".sop-hero h1");
+  const catEl = layout.querySelector(".sop-hero .eyebrow");
+  const title = titleEl ? titleEl.textContent : "";
+  const category = catEl ? catEl.textContent : "";
+  const crumb = document.createElement("nav");
+  crumb.className = "breadcrumb";
+  crumb.innerHTML = `
+    <a href="${{withBase("./index.html")}}">首页</a>
+    <span class="sep">/</span>
+    <a href="${{withBase("./pages/sop.html")}}">实验 SOP</a>
+    ${{category ? `<span class="sep">/</span><a href="${{withBase("./pages/sop.html")}}">${{escapeHtml(category)}}</a>` : ""}}
+    <span class="sep">/</span>
+    <span>${{escapeHtml(title)}}</span>
+  `;
+  layout.insertBefore(crumb, backLink);
+}}
+
+function initRelatedSops() {{
+  const layout = document.querySelector(".sop-preview-layout");
+  if (!layout) return;
+  if (layout.querySelector(".related-sops")) return;
+  const titleEl = layout.querySelector(".sop-hero h1");
+  const catEl = layout.querySelector(".sop-hero .eyebrow");
+  if (!titleEl) return;
+  const title = titleEl.textContent;
+  const category = catEl ? catEl.textContent : "";
+  const current = siteData.sops.find((s) => s.title === title);
+  if (!current) return;
+  const related = siteData.sops
+    .filter((s) => s.title !== title && (s.category === current.category || s.tags.some((t) => current.tags.includes(t))))
+    .slice(0, 4);
+  if (!related.length) return;
+  const section = document.createElement("section");
+  section.className = "related-sops";
+  section.innerHTML = `
+    <div class="related-sops-head">
+      <p class="eyebrow">Related</p>
+      <h3>相关 SOP</h3>
+    </div>
+    <div class="related-sops-grid">
+      ${{related.map((sop, i) => `
+        <a class="related-sop-card transition-link" href="${{withBase(sop.page)}}" style="--i:${{i}}">
+          <span class="pill">${{escapeHtml(sop.category)}}</span>
+          <h4>${{escapeHtml(sop.title)}}</h4>
+          <p>${{escapeHtml(sop.desc)}}</p>
+        </a>
+      `).join("")}}
+    </div>
+  `;
+  layout.appendChild(section);
+}}
+
+function initPrevNext() {{
+  const layout = document.querySelector(".sop-preview-layout");
+  if (!layout) return;
+  if (layout.querySelector(".prev-next-nav")) return;
+  const titleEl = layout.querySelector(".sop-hero h1");
+  if (!titleEl) return;
+  const title = titleEl.textContent;
+  const idx = siteData.sops.findIndex((s) => s.title === title);
+  if (idx === -1) return;
+  const prev = idx > 0 ? siteData.sops[idx - 1] : null;
+  const next = idx < siteData.sops.length - 1 ? siteData.sops[idx + 1] : null;
+  if (!prev && !next) return;
+  const nav = document.createElement("nav");
+  nav.className = "prev-next-nav";
+  let html = "";
+  if (prev) {{
+    html += `<a class="prev-next-link prev transition-link" href="${{withBase(prev.page)}}">
+      <span class="label">← 上一页</span>
+      <span class="title">${{escapeHtml(prev.title)}}</span>
+    </a>`;
+  }}
+  if (next) {{
+    html += `<a class="prev-next-link next transition-link" href="${{withBase(next.page)}}">
+      <span class="label">下一页 →</span>
+      <span class="title">${{escapeHtml(next.title)}}</span>
+    </a>`;
+  }}
+  nav.innerHTML = html;
+  layout.appendChild(nav);
+}}
+
+function initPdfLoading() {{
+  const iframe = document.querySelector(".pdf-panel iframe");
+  if (!iframe) return;
+  const panel = iframe.closest(".pdf-panel");
+  if (!panel) return;
+  const loading = document.createElement("div");
+  loading.className = "pdf-loading";
+  loading.innerHTML = `<div class="pdf-loading-spinner">PDF 加载中...</div>`;
+  panel.insertBefore(loading, iframe);
+  iframe.style.display = "none";
+  iframe.addEventListener("load", () => {{
+    loading.style.display = "none";
+    iframe.style.display = "block";
+    iframe.classList.add("loaded");
+  }});
+  setTimeout(() => {{
+    if (loading.style.display !== "none") {{
+      loading.style.display = "none";
+      iframe.style.display = "block";
+      iframe.classList.add("loaded");
+    }}
+  }}, 3000);
+}}
+
+function initBackToTop() {{
+  if (document.querySelector(".back-to-top")) return;
+  const btn = document.createElement("button");
+  btn.className = "back-to-top";
+  btn.setAttribute("type", "button");
+  btn.setAttribute("aria-label", "返回顶部");
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>`;
+  document.body.appendChild(btn);
+  btn.addEventListener("click", () => window.scrollTo({{ top: 0, behavior: "smooth" }}));
+  const onScroll = () => {{
+    btn.classList.toggle("visible", window.scrollY > 400);
+  }};
+  window.addEventListener("scroll", onScroll, {{ passive: true }});
+  onScroll();
+}}
+
+function initMobileNav() {{
+  if (document.querySelector(".mobile-nav")) return;
+  if (window.innerWidth > 580) return;
+  const nav = document.createElement("nav");
+  nav.className = "mobile-nav";
+  const base = basePath();
+  const items = [
+    {{ label: "首页", href: `${{base}}/index.html`, icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' }},
+    {{ label: "SOP", href: `${{base}}/pages/sop.html`, icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' }},
+    {{ label: "供应商", href: `${{base}}/pages/suppliers.html`, icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h20l-2 5H4z"/><path d="M5 8v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/></svg>' }},
+    {{ label: "工具", href: `${{base}}/pages/tools.html`, icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>' }},
+  ];
+  let current = window.location.pathname.split("/").pop() || "index.html";
+  if (current === "") current = "index.html";
+  nav.innerHTML = items.map((item) => {{
+    const target = item.href.split("/").pop();
+    const active = target === current ? " active" : "";
+    return `<a href="${{item.href}}" class="${{active}}">${{item.icon}}<span>${{item.label}}</span></a>`;
+  }}).join("");
+  document.body.appendChild(nav);
+}}
+
+function initToolFilterTabs() {{
+  const container = document.querySelector("#toolFilterTabs");
+  if (!container) return;
+  const cats = ["全部", ...new Set(siteData.tools.map((t) => t.category))];
+  container.innerHTML = cats.map((cat) =>
+    `<button class="tag-tab" type="button" aria-selected="${{cat === selectedToolCategory}}" data-tool-cat="${{escapeHtml(cat)}}">${{escapeHtml(cat)}}</button>`
+  ).join("");
 }}
 
 document.addEventListener("DOMContentLoaded", () => {{
+  const presetCat = localStorage.getItem("xu-lab-preset-category");
+  if (presetCat) {{
+    selectedCategory = presetCat;
+    localStorage.removeItem("xu-lab-preset-category");
+  }}
+
   renderTabs();
   renderTagTabs();
   renderHome();
@@ -617,6 +1046,16 @@ document.addEventListener("DOMContentLoaded", () => {{
   initNavScroll();
   initNavActive();
   initThemeSwitcher();
+  injectUpdatesNav();
+  initFooter();
+  initGlobalSearch();
+  initBreadcrumb();
+  initRelatedSops();
+  initPrevNext();
+  initPdfLoading();
+  initBackToTop();
+  initMobileNav();
+  initToolFilterTabs();
 
   const categoryTabs = document.querySelector("#categoryTabs");
   if (categoryTabs) categoryTabs.addEventListener("click", (event) => {{
@@ -640,6 +1079,37 @@ document.addEventListener("DOMContentLoaded", () => {{
   if (search) search.addEventListener("input", (event) => {{
     searchTerm = event.target.value;
     renderSopDirectory();
+  }});
+
+  const sortSelect = document.querySelector("#sopSortSelect");
+  if (sortSelect) sortSelect.addEventListener("change", (event) => {{
+    sortOption = event.target.value;
+    renderSopDirectory();
+  }});
+
+  const toolFilter = document.querySelector("#toolFilterTabs");
+  if (toolFilter) toolFilter.addEventListener("click", (event) => {{
+    const button = event.target.closest("button[data-tool-cat]");
+    if (!button) return;
+    selectedToolCategory = button.dataset.toolCat;
+    initToolFilterTabs();
+    renderToolDirectory();
+  }});
+
+  const vendorSearch = document.querySelector("#vendorSearchInput");
+  if (vendorSearch) vendorSearch.addEventListener("input", (event) => {{
+    vendorSearchTerm = event.target.value;
+    renderVendorDirectory();
+  }});
+
+  const catAccess = document.querySelector("#homeCatAccess");
+  if (catAccess) catAccess.addEventListener("click", (event) => {{
+    const item = event.target.closest(".cat-quick-item");
+    if (!item) return;
+    event.preventDefault();
+    const cat = item.dataset.cat;
+    localStorage.setItem("xu-lab-preset-category", cat);
+    window.location.href = withBase("./pages/sop.html");
   }});
 }});
 """
@@ -1441,6 +1911,478 @@ h3 { margin-bottom: 8px; font-size: 19px; font-weight: 700; }
   text-align: center;
 }
 
+/* ── Footer ─────────────────────────────────────────── */
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding: 32px clamp(18px, 5vw, 68px) 40px;
+  background: var(--surface-soft);
+  transition: background 400ms ease, border-color 400ms ease;
+}
+.site-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+.site-footer-left { display: flex; align-items: center; gap: 10px; }
+.site-footer-mark {
+  display: grid;
+  width: 32px; height: 32px;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--brand-grad);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+}
+.site-footer-text { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.site-footer-text strong { color: var(--ink); }
+.site-footer-right { display: flex; align-items: center; gap: 18px; font-size: 13px; color: var(--muted); }
+.site-footer-right a { color: var(--accent-strong); font-weight: 600; transition: color 200ms ease; }
+.site-footer-right a:hover { color: var(--accent); }
+
+/* ── Global Search Trigger ──────────────────────────── */
+.search-trigger {
+  display: grid;
+  place-items: center;
+  width: 38px; height: 38px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 200ms ease, color 200ms ease, background 200ms ease;
+}
+.search-trigger:hover { border-color: var(--accent); color: var(--accent-strong); }
+.search-trigger svg { width: 18px; height: 18px; }
+
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10vh 20px 20px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 250ms ease, visibility 250ms ease;
+}
+.search-overlay.open { opacity: 1; visibility: visible; }
+.search-overlay-box {
+  width: min(680px, 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  transform: translateY(-16px);
+  transition: transform 300ms var(--ease-spring);
+}
+.search-overlay.open .search-overlay-box { transform: translateY(0); }
+.search-overlay-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.search-overlay-input-wrap svg { width: 20px; height: 20px; color: var(--muted); flex-shrink: 0; }
+.search-overlay-input {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+}
+.search-overlay-close {
+  border: 0;
+  background: var(--surface-soft);
+  color: var(--muted);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  transition: background 200ms ease, color 200ms ease;
+}
+.search-overlay-close:hover { background: var(--accent); color: #fff; }
+.search-overlay-results {
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 8px;
+}
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  transition: background 160ms ease;
+}
+.search-result-item:hover { background: var(--surface-soft); }
+.search-result-type {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent);
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+.search-result-info { flex: 1; min-width: 0; }
+.search-result-info strong { display: block; font-size: 15px; color: var(--ink); }
+.search-result-info span { font-size: 13px; color: var(--muted); }
+.search-overlay-empty { padding: 28px; text-align: center; color: var(--muted); font-size: 14px; }
+
+/* ── Breadcrumb ─────────────────────────────────────── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.breadcrumb a { color: var(--accent-strong); transition: color 200ms ease; }
+.breadcrumb a:hover { color: var(--accent); }
+.breadcrumb span.sep { color: var(--line); }
+
+/* ── Related SOPs ───────────────────────────────────── */
+.related-sops {
+  margin-top: 28px;
+}
+.related-sops-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.related-sops-head h3 { margin: 0; font-size: 18px; }
+.related-sops-head .eyebrow { margin: 0; }
+.related-sops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.related-sop-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  transition: transform 200ms var(--ease-out), box-shadow 200ms ease, border-color 200ms ease;
+  animation: cardEnter 400ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+.related-sop-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-sm);
+  border-color: rgba(47, 125, 102, 0.3);
+}
+.related-sop-card .pill { font-size: 11px; padding: 3px 6px; }
+.related-sop-card h4 { margin: 0; font-size: 15px; font-weight: 700; }
+.related-sop-card p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+/* ── Prev / Next Nav ────────────────────────────────── */
+.prev-next-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 28px;
+}
+.prev-next-link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  max-width: 48%;
+  transition: transform 200ms var(--ease-out), box-shadow 200ms ease, border-color 200ms ease;
+}
+.prev-next-link:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-sm);
+  border-color: rgba(47, 125, 102, 0.3);
+}
+.prev-next-link.next { text-align: right; margin-left: auto; }
+.prev-next-link .label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.prev-next-link .title { font-size: 15px; font-weight: 700; color: var(--ink); }
+
+/* ── PDF Loading ────────────────────────────────────── */
+.pdf-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: min(78vh, 860px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+}
+.pdf-loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  color: var(--muted);
+}
+.pdf-loading-spinner::before {
+  content: "";
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.pdf-panel iframe.loaded { animation: fadeIn 400ms ease both; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Sort Bar ───────────────────────────────────────── */
+.sort-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.result-count { font-size: 14px; color: var(--muted); }
+.result-count strong { color: var(--accent-strong); }
+.sort-select {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 200ms ease;
+}
+.sort-select:hover { border-color: var(--accent); }
+.sort-select:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.1); }
+
+/* ── Tool Filter Tabs ───────────────────────────────── */
+.tool-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+/* ── Vendor Search ──────────────────────────────────── */
+.vendor-search-bar {
+  margin-bottom: 20px;
+}
+
+/* ── Back to Top ────────────────────────────────────── */
+.back-to-top {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--accent-strong);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: opacity 300ms ease, visibility 300ms ease, transform 300ms var(--ease-spring), background 200ms ease, color 200ms ease;
+}
+.back-to-top.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+.back-to-top:hover { background: var(--accent); color: #fff; }
+.back-to-top svg { width: 20px; height: 20px; }
+
+/* ── Mobile Bottom Nav ──────────────────────────────── */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 12;
+  justify-content: space-around;
+  padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  background: var(--topbar-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.mobile-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  transition: color 200ms ease;
+}
+.mobile-nav a.active { color: var(--accent-strong); }
+.mobile-nav a svg { width: 22px; height: 22px; }
+
+/* ── Homepage: Category Quick Access ────────────────── */
+.cat-quick-access {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.cat-quick-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  transition: transform 200ms var(--ease-spring), box-shadow 200ms ease, border-color 200ms ease;
+  animation: cardEnter 400ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+.cat-quick-item:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-sm);
+}
+.cat-quick-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--cat-color, var(--accent));
+  flex-shrink: 0;
+}
+.cat-quick-count {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* ── Homepage: Compact Vendor Grid ──────────────────── */
+.vendor-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.vendor-compact-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  transition: transform 200ms var(--ease-out), box-shadow 200ms ease, border-color 200ms ease;
+  animation: cardEnter 400ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+.vendor-compact-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-sm);
+  border-color: rgba(47, 125, 102, 0.3);
+}
+.vendor-compact-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--brand-grad);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.vendor-compact-info { flex: 1; min-width: 0; }
+.vendor-compact-info strong { display: block; font-size: 15px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vendor-compact-info span { font-size: 12px; color: var(--muted); }
+
+/* ── Homepage: Tools Grouped ────────────────────────── */
+.tools-grouped { display: grid; gap: 20px; }
+.tool-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.tool-group-head .tool-group-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+.tool-group-head .tool-group-line {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.tool-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.tool-mini-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  transition: transform 200ms var(--ease-out), box-shadow 200ms ease, border-color 200ms ease;
+}
+.tool-mini-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-color: rgba(47, 125, 102, 0.3);
+}
+.tool-mini-mark {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--accent-strong);
+  font-weight: 800;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.tool-mini-info { flex: 1; min-width: 0; }
+.tool-mini-info strong { display: block; font-size: 14px; color: var(--ink); }
+.tool-mini-info span { font-size: 12px; color: var(--muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* ── Keyframes ─────────────────────────────────────── */
 @keyframes pageIn {
   from { opacity: 0; transform: translateY(12px); }
@@ -1485,9 +2427,12 @@ h3 { margin-bottom: 8px; font-size: 19px; font-weight: 700; }
   .designer { justify-self: start; }
   .nav { justify-content: flex-start; overflow-x: auto; }
   .section-head, .pdf-panel-head { align-items: stretch; flex-direction: column; }
+  .prev-next-nav { flex-direction: column; }
+  .prev-next-link { max-width: 100%; }
+  .prev-next-link.next { text-align: left; margin-left: 0; }
 }
 @media (max-width: 580px) {
-  main { padding-bottom: 32px; }
+  main { padding-bottom: 72px; }
   .landing-copy h1 { font-size: 40px; }
   .bubble-field, .directory-grid { grid-template-columns: 1fr; }
   .preview-row { grid-auto-columns: minmax(250px, 84vw); }
@@ -1495,6 +2440,13 @@ h3 { margin-bottom: 8px; font-size: 19px; font-weight: 700; }
   .card-actions, .page-actions, .dialog-actions { flex-direction: column; }
   .button { width: 100%; }
   .pdf-panel iframe { height: 64vh; }
+  .pdf-loading { height: 64vh; }
+  .sort-bar { flex-direction: column; align-items: flex-start; }
+  .vendor-compact-grid { grid-template-columns: 1fr; }
+  .tool-group-grid { grid-template-columns: 1fr; }
+  .related-sops-grid { grid-template-columns: 1fr; }
+  .mobile-nav { display: flex; }
+  .back-to-top { bottom: 76px; }
 }
 """
     write_text(ROOT / "styles.css", css)
