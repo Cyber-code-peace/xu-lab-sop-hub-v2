@@ -423,7 +423,10 @@ const siteData = {
       "desc": "BioRender 科研绘图基础入门与操作示例。",
       "page": "./sop-pages/sop-27.html",
       "pdf": "./experiment/biorender绘图入门-wpy.pdf",
-      "tags": ["作图", "BioRender"],
+      "tags": [
+        "作图",
+        "BioRender"
+      ],
       "updateDate": "",
       "updateLabel": "待补充",
       "favorite": false
@@ -436,7 +439,10 @@ const siteData = {
       "desc": "科研作图与图形资源数据库整理。",
       "page": "./sop-pages/sop-28.html",
       "pdf": "./experiment/Figure Database.pdf",
-      "tags": ["作图", "数据库"],
+      "tags": [
+        "作图",
+        "数据库"
+      ],
       "updateDate": "",
       "updateLabel": "待补充",
       "favorite": false
@@ -449,10 +455,91 @@ const siteData = {
       "desc": "科研作图工作坊资料整理。",
       "page": "./sop-pages/sop-29.html",
       "pdf": "./experiment/ZYC整理作图-传workshop.pdf",
-      "tags": ["作图", "Workshop"],
+      "tags": [
+        "作图",
+        "Workshop"
+      ],
       "updateDate": "",
       "updateLabel": "待补充",
       "favorite": false
+    },
+    {
+      "file": "CCK8.pdf",
+      "title": "CCK8 细胞活力检测",
+      "author": "待补充",
+      "category": "细胞实验",
+      "desc": "CCK-8 法检测细胞增殖与活力，含试剂配制与吸光度读取要点。",
+      "tags": [
+        "细胞"
+      ],
+      "updateDate": "",
+      "updateLabel": "待补充",
+      "favorite": false,
+      "page": "./sop-pages/sop-30.html",
+      "pdf": "./experiment/CCK8.pdf"
+    },
+    {
+      "file": "Graphpad-Prism-5.0-解析.pdf",
+      "title": "GraphPad Prism 5.0 解析",
+      "author": "待补充",
+      "category": "数据与网络药理",
+      "desc": "GraphPad Prism 5.0 统计分析与科研绘图操作教程。",
+      "tags": [
+        "作图",
+        "统计"
+      ],
+      "updateDate": "",
+      "updateLabel": "待补充",
+      "favorite": false,
+      "page": "./sop-pages/sop-31.html",
+      "pdf": "./experiment/Graphpad-Prism-5.0-解析.pdf"
+    },
+    {
+      "file": "使用Endnote在Office Word中插入文献的方法.pdf",
+      "title": "Endnote 在 Word 中插入文献",
+      "author": "待补充",
+      "category": "数据与网络药理",
+      "desc": "使用 EndNote 在 Word 中管理并插入参考文献的完整方法。",
+      "tags": [
+        "文献",
+        "Endnote"
+      ],
+      "updateDate": "",
+      "updateLabel": "待补充",
+      "favorite": false,
+      "page": "./sop-pages/sop-32.html",
+      "pdf": "./experiment/使用Endnote在Office Word中插入文献的方法.pdf"
+    },
+    {
+      "file": "动物药物体内使用浓度折算方式-26.8.7.pdf",
+      "title": "动物药物体内使用浓度折算",
+      "author": "待补充",
+      "category": "动物实验",
+      "desc": "动物实验中药物体内给药浓度的换算方式与参考表。",
+      "tags": [
+        "动物",
+        "药理"
+      ],
+      "updateDate": "2026-08-07",
+      "updateLabel": "2026-08-07",
+      "favorite": false,
+      "page": "./sop-pages/sop-33.html",
+      "pdf": "./experiment/动物药物体内使用浓度折算方式-26.8.7.pdf"
+    },
+    {
+      "file": "细胞计数法.pdf",
+      "title": "细胞计数法（参考版）",
+      "author": "待补充",
+      "category": "细胞实验",
+      "desc": "细胞计数法操作步骤与注意事项，含血球计数板使用方法。",
+      "tags": [
+        "细胞"
+      ],
+      "updateDate": "",
+      "updateLabel": "待补充",
+      "favorite": false,
+      "page": "./sop-pages/sop-34.html",
+      "pdf": "./experiment/细胞计数法.pdf"
     }
   ],
   "vendors": [
