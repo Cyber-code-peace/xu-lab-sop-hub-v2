@@ -548,6 +548,20 @@ const siteData = {
       "page": "./sop-pages/sop-34.html",
       "pdf": "./experiment/细胞计数法.pdf",
       "uploadDate": "2026-08-07"
+    },
+    {
+      "file": "预测启动子结合序列示意图画法教程.pdf",
+      "title": "预测启动子结合序列示意图画法教程",
+      "author": "待补充",
+      "category": "分子与基因",
+      "desc": "预测启动子与转录因子结合序列示意图的检索、预测和绘制教程。",
+      "tags": ["启动子", "转录因子", "作图"],
+      "updateDate": "",
+      "updateLabel": "待补充",
+      "favorite": false,
+      "page": "./sop-pages/sop-35.html",
+      "pdf": "./experiment/预测启动子结合序列示意图画法教程.pdf",
+      "uploadDate": "2026-08-22"
     }
   ],
   "vendors": [
