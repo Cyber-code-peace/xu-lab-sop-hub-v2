@@ -1,0 +1,344 @@
+name: Watermark recent 9 PDFs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/watermark-recent-9.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: watermark-recent-9
+  cancel-in-progress: false
+
+jobs:
+  watermark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout full repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PDF tooling
+        run: python -m pip install --disable-pip-version-check pymupdf
+
+      - name: Infer the historical watermark and apply it to the 9 recent PDFs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import fitz
+          import math
+          import os
+          import statistics
+          import subprocess
+          import tempfile
+          import zipfile
+          from collections import defaultdict
+          from pathlib import Path
+
+          WATERMARK_COMMIT = "2f11afddb9274d65eb74a0355ae85b7d53976bba"
+          TARGETS = [
+              "experiment/biorender绘图入门-wpy.pdf",
+              "experiment/Figure Database.pdf",
+              "experiment/ZYC整理作图-传workshop.pdf",
+              "experiment/CCK8.pdf",
+              "experiment/Graphpad-Prism-5.0-解析.pdf",
+              "experiment/使用Endnote在Office Word中插入文献的方法.pdf",
+              "experiment/动物药物体内使用浓度折算方式-26.8.7.pdf",
+              "experiment/细胞计数法.pdf",
+              "experiment/预测启动子结合序列示意图画法教程.pdf",
+          ]
+
+          def sh(*args, text=False):
+              return subprocess.check_output(args, text=text)
+
+          def chars_text(span):
+              chars = span.get("chars") or ()
+              out = []
+              for ch in chars:
+                  try:
+                      out.append(chr(int(ch[0])))
+                  except Exception:
+                      pass
+              return "".join(out)
+
+          def origin(span):
+              chars = span.get("chars") or ()
+              if chars:
+                  return tuple(float(v) for v in chars[0][2])
+              b = span.get("bbox", (0, 0, 0, 0))
+              return (float(b[0]), float(b[3]))
+
+          def angle(span):
+              d = span.get("dir", (1.0, 0.0))
+              return math.degrees(math.atan2(-float(d[1]), float(d[0])))
+
+          def adelta(a, b):
+              return abs((a - b + 180.0) % 360.0 - 180.0)
+
+          def same_span(a, b):
+              if chars_text(a) != chars_text(b):
+                  return False
+              if math.dist(origin(a), origin(b)) > 2.5:
+                  return False
+              if abs(float(a.get("size", 0)) - float(b.get("size", 0))) > 0.8:
+                  return False
+              if adelta(angle(a), angle(b)) > 1.5:
+                  return False
+              return True
+
+          def added_spans(new_page, old_page):
+              new = list(new_page.get_texttrace())
+              old = list(old_page.get_texttrace())
+              used = set()
+              extras = []
+              for n in new:
+                  match = None
+                  for i, o in enumerate(old):
+                      if i in used:
+                          continue
+                      if same_span(n, o):
+                          match = i
+                          break
+                  if match is None:
+                      if chars_text(n).strip():
+                          extras.append(n)
+                  else:
+                      used.add(match)
+              return extras
+
+          parent = sh("git", "rev-parse", WATERMARK_COMMIT + "^").decode().strip()
+          ref_paths = sh(
+              "git", "diff", "--name-only", parent, WATERMARK_COMMIT, "--", "experiment"
+          ).decode().splitlines()
+          ref_paths = [p for p in ref_paths if p.lower().endswith(".pdf")]
+          if len(ref_paths) < 10:
+              raise SystemExit(f"Fail-safe: expected a substantial historical watermark batch; found only {len(ref_paths)} PDFs")
+
+          # Compare exact before/after versions from the historical watermark commit.
+          docs_by_text = defaultdict(set)
+          spans_by_text = defaultdict(list)
+          page_patterns = []
+
+          with tempfile.TemporaryDirectory() as td_raw:
+              td = Path(td_raw)
+              for idx, ref in enumerate(ref_paths):
+                  try:
+                      before_bytes = sh("git", "show", f"{parent}:{ref}")
+                      after_bytes = sh("git", "show", f"{WATERMARK_COMMIT}:{ref}")
+                  except subprocess.CalledProcessError:
+                      continue
+                  before_path = td / f"before-{idx}.pdf"
+                  after_path = td / f"after-{idx}.pdf"
+                  before_path.write_bytes(before_bytes)
+                  after_path.write_bytes(after_bytes)
+                  try:
+                      before = fitz.open(before_path)
+                      after = fitz.open(after_path)
+                  except Exception:
+                      continue
+                  try:
+                      for pno in range(min(len(before), len(after), 3)):
+                          extras = added_spans(after[pno], before[pno])
+                          if not extras:
+                              continue
+                          w = float(after[pno].rect.width)
+                          h = float(after[pno].rect.height)
+                          page_patterns.append((ref, pno, w, h, extras))
+                          for s in extras:
+                              t = chars_text(s).strip()
+                              if len(t) < 2:
+                                  continue
+                              docs_by_text[t].add(ref)
+                              spans_by_text[t].append(s)
+                  finally:
+                      before.close()
+                      after.close()
+
+          if not docs_by_text:
+              raise SystemExit("Fail-safe: historical before/after PDFs did not reveal a text watermark")
+
+          ranked = sorted(
+              docs_by_text,
+              key=lambda t: (len(docs_by_text[t]), len(spans_by_text[t]), len(t)),
+              reverse=True,
+          )
+          best_text = ranked[0]
+          best_doc_count = len(docs_by_text[best_text])
+          if best_doc_count < max(4, len(ref_paths) // 4):
+              raise SystemExit(
+                  f"Fail-safe: inferred watermark is not stable across enough documents: {best_text!r}, docs={best_doc_count}/{len(ref_paths)}"
+              )
+
+          # Keep repeated watermark text variants that occur in most of the same historical documents.
+          min_docs = max(3, math.ceil(best_doc_count * 0.55))
+          watermark_texts = [t for t in ranked if len(docs_by_text[t]) >= min_docs][:4]
+
+          styles = {}
+          for t in watermark_texts:
+              ss = spans_by_text[t]
+              styles[t] = {
+                  "size": statistics.median(float(s.get("size", 12.0)) for s in ss),
+                  "opacity": statistics.median(float(s.get("opacity", 1.0)) for s in ss),
+                  "angle": statistics.median(angle(s) for s in ss),
+              }
+
+          if min(styles[t]["opacity"] for t in watermark_texts) > 0.90:
+              raise SystemExit(f"Fail-safe: repeated historical text looks like normal opaque document text, not a watermark: {styles}")
+
+          patterns = []
+          for ref, pno, w, h, extras in page_patterns:
+              marks = []
+              for s in extras:
+                  t = chars_text(s).strip()
+                  if t not in watermark_texts:
+                      continue
+                  c = s.get("color", (0.5, 0.5, 0.5))
+                  if isinstance(c, (list, tuple)):
+                      color = tuple(float(x) for x in c[:3])
+                  else:
+                      # Conservative gray fallback for integer / unsupported color encodings.
+                      color = (0.55, 0.55, 0.55)
+                  if len(color) == 1:
+                      color = (color[0], color[0], color[0])
+                  ox, oy = origin(s)
+                  marks.append({
+                      "text": t,
+                      "x": ox,
+                      "y": oy,
+                      "size": float(s.get("size", styles[t]["size"])),
+                      "opacity": float(s.get("opacity", styles[t]["opacity"])),
+                      "angle": angle(s),
+                      "color": color,
+                  })
+              if marks:
+                  patterns.append({"ref": ref, "pno": pno, "w": w, "h": h, "marks": marks})
+
+          if len(patterns) < 4:
+              raise SystemExit(f"Fail-safe: only {len(patterns)} usable historical watermark page patterns")
+
+          def page_has_mark(page):
+              for s in page.get_texttrace():
+                  t = chars_text(s).strip()
+                  if t not in styles:
+                      continue
+                  st = styles[t]
+                  if abs(float(s.get("opacity", 1.0)) - st["opacity"]) <= 0.25 and adelta(angle(s), st["angle"]) <= 10:
+                      return True
+              return False
+
+          def choose_pattern(page):
+              w, h = float(page.rect.width), float(page.rect.height)
+              orientation = w >= h
+              ratio = w / h
+              same = [p for p in patterns if (p["w"] >= p["h"]) == orientation]
+              pool = same or patterns
+              return min(pool, key=lambda p: abs(math.log(max(1e-6, (p["w"] / p["h"]) / ratio))))
+
+          def font_name(text):
+              return "china-s" if any(ord(ch) > 255 for ch in text) else "helv"
+
+          changed = []
+          already = []
+          qa_rows = []
+
+          for target in TARGETS:
+              path = Path(target)
+              if not path.exists():
+                  raise SystemExit(f"Fail-safe: target missing from repository: {target}")
+              doc = fitz.open(path)
+              initial_flags = [page_has_mark(p) for p in doc]
+              if all(initial_flags):
+                  already.append(target)
+                  doc.close()
+                  continue
+
+              for pno, page in enumerate(doc):
+                  if initial_flags[pno]:
+                      continue
+                  pat = choose_pattern(page)
+                  sx = float(page.rect.width) / pat["w"]
+                  sy = float(page.rect.height) / pat["h"]
+                  sf = math.sqrt(sx * sy)
+                  for m in pat["marks"]:
+                      pt = fitz.Point(m["x"] * sx, m["y"] * sy)
+                      rot = fitz.Matrix(1, 1).prerotate(m["angle"])
+                      page.insert_text(
+                          pt,
+                          m["text"],
+                          fontsize=max(6.0, m["size"] * sf),
+                          fontname=font_name(m["text"]),
+                          color=m["color"],
+                          fill_opacity=max(0.02, min(0.80, m["opacity"])),
+                          morph=(pt, rot),
+                          overlay=True,
+                      )
+
+              tmp = path.with_suffix(path.suffix + ".tmp")
+              doc.save(tmp, garbage=4, deflate=True)
+              doc.close()
+              os.replace(tmp, path)
+
+              # Structural + renderer QA. Every page must contain the inferred watermark, and representative pages must render.
+              check = fitz.open(path)
+              try:
+                  missing = [i + 1 for i, p in enumerate(check) if not page_has_mark(p)]
+                  if missing:
+                      raise SystemExit(f"QA failed: {target} has pages without inferred watermark: {missing[:20]}")
+                  for pno in sorted(set([0, len(check) // 2, len(check) - 1])):
+                      pix = check[pno].get_pixmap(matrix=fitz.Matrix(1.35, 1.35), alpha=False)
+                      if pix.width < 100 or pix.height < 100 or len(pix.samples) < 10000:
+                          raise SystemExit(f"QA failed: invalid render for {target}, page {pno + 1}")
+                  qa_rows.append((target, len(check)))
+              finally:
+                  check.close()
+              changed.append(target)
+
+          # Rebuild the site's downloadable ZIP so the bundle matches the individual PDFs.
+          zip_path = Path("downloads/all-sop-pdfs.zip")
+          zip_tmp = zip_path.with_suffix(".zip.tmp")
+          with zipfile.ZipFile(zip_tmp, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+              for pdf in sorted(Path("experiment").glob("*.pdf"), key=lambda p: p.name.casefold()):
+                  zf.write(pdf, arcname=pdf.name)
+          os.replace(zip_tmp, zip_path)
+
+          print("===== WATERMARK INFERENCE =====")
+          print("Historical reference PDFs:", len(ref_paths))
+          print("Inferred watermark text(s):", watermark_texts)
+          print("Inferred styles:", styles)
+          print("Usable page patterns:", len(patterns))
+          print("Already watermarked targets:", already)
+          print("Newly watermarked targets:", changed)
+          print("QA page counts:", qa_rows)
+          print("Bundle bytes:", zip_path.stat().st_size)
+
+          if len(changed) + len(already) != len(TARGETS):
+              raise SystemExit("Fail-safe: target accounting mismatch")
+          if not changed:
+              raise SystemExit("Nothing changed; refusing to create a misleading watermark branch")
+          PY
+
+      - name: Commit verified binaries to a review branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH="watermark/recent-9-20260824"
+          git config user.name "Xu Lab SOP Hub"
+          git config user.email "actions@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add experiment downloads/all-sop-pdfs.zip
+          git diff --cached --stat
+          test -n "$(git diff --cached --name-only)"
+          git commit -m "Watermark 9 recent experiment PDFs"
+          git push --force origin "HEAD:refs/heads/$BRANCH"
