@@ -1,0 +1,16 @@
+HISTORICAL WATERMARK DIAGNOSTIC
+commit=2f11afddb9274d65eb74a0355ae85b7d53976bba
+parent=59fae2e2d190eb59d3b75ff77e01b3da30dd1cf8
+reference_pdfs=1
+pages_scanned=1
+
+LOW-OPACITY TEXT (opacity < 0.98), ranked by document coverage
+text='仅供Xu Lab内部学习' docs=1 occ=9 opacity_med=0.400 size_med=32.79 angle_med=45.0
+
+IMAGES ranked by document coverage
+NONE
+
+XOBJECT COUNTS BY PDF (top 30)
+experiment/WM-Transwell.pdf: 1
+
+ANNOTATIONS
