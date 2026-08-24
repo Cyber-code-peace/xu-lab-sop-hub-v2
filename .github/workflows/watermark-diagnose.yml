@@ -1,0 +1,151 @@
+name: Diagnose historical watermark
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/watermark-diagnose.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check pymupdf
+      - name: Inspect historical watermarked PDFs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import fitz, math, statistics, subprocess
+          from collections import Counter, defaultdict
+          from pathlib import Path
+
+          WM = '2f11afddb9274d65eb74a0355ae85b7d53976bba'
+          parent = subprocess.check_output(['git','rev-parse', WM + '^'], text=True).strip()
+          paths = subprocess.check_output(['git','diff','--name-only',parent,WM,'--','experiment'], text=True).splitlines()
+          paths = [p for p in paths if p.lower().endswith('.pdf')]
+
+          text_docs = defaultdict(set)
+          text_occ = Counter()
+          text_opacity = defaultdict(list)
+          text_size = defaultdict(list)
+          text_angle = defaultdict(list)
+          image_docs = defaultdict(set)
+          image_occ = Counter()
+          image_sizes = defaultdict(list)
+          xobj_docs = Counter()
+          annots = Counter()
+          page_count = 0
+
+          def span_text(s):
+              out=[]
+              for ch in (s.get('chars') or ()): 
+                  try: out.append(chr(int(ch[0])))
+                  except Exception: pass
+              return ''.join(out).strip()
+
+          def span_angle(s):
+              d=s.get('dir',(1.0,0.0))
+              return math.degrees(math.atan2(-float(d[1]), float(d[0])))
+
+          for p in paths:
+              raw = subprocess.check_output(['git','show',f'{WM}:{p}'])
+              tmp = Path('/tmp') / ('diag-' + str(abs(hash(p))) + '.pdf')
+              tmp.write_bytes(raw)
+              try:
+                  doc=fitz.open(tmp)
+              except Exception:
+                  continue
+              try:
+                  for pg in doc:
+                      page_count += 1
+                      for s in pg.get_texttrace():
+                          t=span_text(s)
+                          if not t:
+                              continue
+                          op=float(s.get('opacity',1.0))
+                          if op < 0.98:
+                              text_docs[t].add(p)
+                              text_occ[t]+=1
+                              text_opacity[t].append(op)
+                              text_size[t].append(float(s.get('size',0.0)))
+                              text_angle[t].append(span_angle(s))
+                      for img in pg.get_images(full=True):
+                          xref=int(img[0])
+                          try:
+                              info=doc.extract_image(xref)
+                              key=f"{info.get('ext','?')}:{info.get('width','?')}x{info.get('height','?')}:{len(info.get('image',b''))}"
+                              image_docs[key].add(p)
+                              image_occ[key]+=1
+                              image_sizes[key].append(len(info.get('image',b'')))
+                          except Exception:
+                              pass
+                      try:
+                          xobj_docs[p] += len(pg.get_xobjects())
+                      except Exception:
+                          pass
+                      try:
+                          a=pg.first_annot
+                          while a:
+                              annots[str(a.type)] += 1
+                              a=a.next
+                      except Exception:
+                          pass
+              finally:
+                  doc.close()
+                  try: tmp.unlink()
+                  except Exception: pass
+
+          lines=[]
+          lines.append('HISTORICAL WATERMARK DIAGNOSTIC')
+          lines.append(f'commit={WM}')
+          lines.append(f'parent={parent}')
+          lines.append(f'reference_pdfs={len(paths)}')
+          lines.append(f'pages_scanned={page_count}')
+          lines.append('')
+          lines.append('LOW-OPACITY TEXT (opacity < 0.98), ranked by document coverage')
+          ranked=sorted(text_docs, key=lambda t:(len(text_docs[t]), text_occ[t]), reverse=True)
+          for t in ranked[:40]:
+              ops=text_opacity[t]; sizes=text_size[t]; ang=text_angle[t]
+              lines.append(f'text={t!r} docs={len(text_docs[t])} occ={text_occ[t]} opacity_med={statistics.median(ops):.3f} size_med={statistics.median(sizes):.2f} angle_med={statistics.median(ang):.1f}')
+          if not ranked:
+              lines.append('NONE')
+          lines.append('')
+          lines.append('IMAGES ranked by document coverage')
+          iranked=sorted(image_docs, key=lambda k:(len(image_docs[k]), image_occ[k]), reverse=True)
+          for k in iranked[:40]:
+              lines.append(f'image={k} docs={len(image_docs[k])} occ={image_occ[k]}')
+          if not iranked:
+              lines.append('NONE')
+          lines.append('')
+          lines.append('XOBJECT COUNTS BY PDF (top 30)')
+          for p,n in xobj_docs.most_common(30):
+              lines.append(f'{p}: {n}')
+          lines.append('')
+          lines.append('ANNOTATIONS')
+          for k,v in annots.most_common():
+              lines.append(f'{k}: {v}')
+          Path('watermark-diagnostic.txt').write_text('\n'.join(lines), encoding='utf-8')
+          print('\n'.join(lines[:120]))
+          PY
+      - name: Publish diagnostic branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH='watermark/diagnostic-20260824'
+          git config user.name 'Xu Lab SOP Hub'
+          git config user.email 'actions@users.noreply.github.com'
+          git switch -C "$BRANCH"
+          git add watermark-diagnostic.txt
+          git commit -m 'Diagnose historical watermark format'
+          git push --force origin "HEAD:refs/heads/$BRANCH"
